@@ -519,7 +519,7 @@ function buildMsg(){
   const dpto=$('f-dpto').value.trim()
   const localidad=$('f-localidad').value.trim()
   const nota=$('f-nota').value.trim()
-  const addrFull=[addr,dpto,localidad].filter(Boolean).join(', ')
+  const addrFull=dirConfirmada||[addr,dpto,localidad].filter(Boolean).join(', ')
   const hora=new Date();const h=hora.getHours().toString().padStart(2,'0')+':'+hora.getMinutes().toString().padStart(2,'0')
   let sub=0;const lines=[]
   ROLLS.forEach((it,i)=>{if(rq[i]>0){lines.push(`- ${rq[i]}x ${it.wa} - ${money(it.v*rq[i])}`);sub+=it.v*rq[i]}})
@@ -543,6 +543,9 @@ function resetPedido(){
   buildList(EXTRAS,eq,'e','list-extras',false)
   $('f-nombre').value='';$('f-tel').value='';$('f-addr').value=''
   $('f-numero').value='';$('f-dpto').value='';$('f-localidad').value='';$('f-nota').value=''
+  dirConfirmada=null
+  // Ocultar mapa
+  $('map-wrap').style.display='none'
   metodoPago=''
   calcAll()
 }
@@ -623,10 +626,11 @@ calcAll()
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-let map=null, marker=null, geoTimer=null, lastGeoResult=null
+let map=null, marker=null, geoTimer=null, lastGeoResult=null, dirConfirmada=null
 
 function buscarDir(){
   clearTimeout(geoTimer)
+  dirConfirmada=null // resetear si cambia la dirección
   const calle=$('f-addr').value.trim()
   const num=$('f-numero').value.trim()
   const loc=$('f-localidad').value.trim()||'San Isidro'
@@ -669,11 +673,18 @@ function mostrarMapa(lat,lng,displayName){
 
 function confirmarUbicacion(){
   if(!lastGeoResult) return
-  // Guardar en campo oculto para usar en el pedido
+  // Armar dirección confirmada: lo que escribió el cliente + coords verificadas
+  const calle=$('f-addr').value.trim()
+  const num=$('f-numero').value.trim()
+  const dpto=$('f-dpto').value.trim()
+  const loc=$('f-localidad').value.trim()
+  dirConfirmada=[calle,num,dpto,loc].filter(Boolean).join(', ')
+  // Feedback visual
   $('map-confirm-btn').textContent='✓ Ubicación confirmada'
   $('map-confirm-btn').style.background='#6fcf97'
   $('map-confirm-btn').style.color='#0a0a0a'
   $('map-confirm-btn').disabled=true
+  $('map-label').textContent='✓ '+dirConfirmada
   $('map-label').style.color='#6fcf97'
 }
 </script>
