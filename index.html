@@ -554,8 +554,7 @@ function resetPedido(){
 function enviarWA(msg,tel){
   const enc=encodeURIComponent(msg)
   const t=tel.replace(/\D/g,'')
-  if(t)window.open(`https://wa.me/549${t}?text=${enc}`,'_blank')
-  else window.open(`https://wa.me/${WA_NUM}?text=${enc}`,'_blank')
+  window.open(`https://wa.me/${WA_NUM}?text=${enc}`,'_blank')
   // Limpiar pedido después de enviar
   setTimeout(resetPedido, 500)
 }
