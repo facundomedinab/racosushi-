@@ -30,7 +30,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .layout{display:grid;grid-template-columns:1fr 340px;gap:0;max-width:1100px;margin:0 auto;align-items:start}
 .menu-col{padding:1.25rem 1.5rem 4rem;border-right:.5px solid var(--b1)}
 .sidebar{padding:1.25rem 1.25rem;position:sticky;top:0;max-height:100vh;overflow-y:auto;align-self:start}
-
 /* ── TABS NAV ── */
 .tabs-nav{display:flex;gap:.4rem;padding:.85rem 0 1rem;overflow-x:auto;scrollbar-width:none}
 .tabs-nav::-webkit-scrollbar{display:none}
@@ -612,8 +611,12 @@ function enviarPedidoDesdeModal(){
 
 function irA(id){
   const el=document.getElementById(id)
-  if(el)el.scrollIntoView({behavior:'smooth',block:'start'})
-  // Marcar pill activo
+  if(!el) return
+  const headerH=document.querySelector('.header').offsetHeight
+  const navH=document.querySelector('.tabs-nav').offsetHeight
+  const offset=headerH+navH+8
+  const top=el.getBoundingClientRect().top+window.scrollY-offset
+  window.scrollTo({top,behavior:'smooth'})
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'))
   const idx={'sec-rolls':0,'sec-nigiris':1,'sec-extras':2,'sec-datos':3}[id]
   const btns=document.querySelectorAll('.tab-btn')
@@ -624,6 +627,13 @@ buildList(ROLLS,rq,'r','list-rolls',true)
 buildList(NIGIRIS,nq,'n','list-nigiris',true)
 buildList(EXTRAS,eq,'e','list-extras',false)
 calcAll()
+
+// Ajustar sidebar top al alto real del header
+window.addEventListener('load',()=>{
+  const hh=document.querySelector('.header').offsetHeight
+  const sb=document.querySelector('.sidebar')
+  if(sb){sb.style.top=hh+'px';sb.style.maxHeight='calc(100vh - '+hh+'px)'}
+})
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
