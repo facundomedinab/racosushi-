@@ -724,11 +724,11 @@ function confirmarUbicacion(){
   }
 }
 
-// Verificación de zona: radio de 10km desde el centro de San Isidro
+// Verificación de zona: radio de 6km desde el centro de la zona de cobertura
 // Cubre San Isidro, Martínez, Acassuso, Beccar y La Lucila
-const ORIGEN_LAT = -34.4697
-const ORIGEN_LNG = -58.5211
-const RADIO_KM = 10.0
+const ORIGEN_LAT = -34.4600
+const ORIGEN_LNG = -58.5150
+const RADIO_KM = 6.0
 
 function dentroDeZona(lat,lng){
   // Fórmula Haversine para distancia en km
