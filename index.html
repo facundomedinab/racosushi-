@@ -724,11 +724,11 @@ function confirmarUbicacion(){
   }
 }
 
-// Verificación de zona: radio de 6km desde Francia 353, San Isidro
+// Verificación de zona: radio de 10km desde el centro de San Isidro
 // Cubre San Isidro, Martínez, Acassuso, Beccar y La Lucila
-const ORIGEN_LAT = -34.4736
-const ORIGEN_LNG = -58.5270
-const RADIO_KM = 6.0
+const ORIGEN_LAT = -34.4697
+const ORIGEN_LNG = -58.5211
+const RADIO_KM = 10.0
 
 function dentroDeZona(lat,lng){
   // Fórmula Haversine para distancia en km
