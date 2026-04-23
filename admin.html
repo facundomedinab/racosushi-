@@ -1798,46 +1798,122 @@ function filtrarCostos(f, btn){
   renderCostos()
 }
 
+// Storage keys for recipe overrides
+function getRecKey(tipo, nombre, field){ return 'raco_rec_'+tipo+'_'+nombre.replace(/\s/g,'_')+'_'+field }
+function getRec(tipo, nombre, field, def){ 
+  const v = localStorage.getItem(getRecKey(tipo,nombre,field))
+  return v !== null ? parseFloat(v) : def
+}
+function setRec(tipo, nombre, field, val){
+  localStorage.setItem(getRecKey(tipo,nombre,field), val)
+}
+
+function recalcCard(cardId){
+  const card = document.getElementById('card_'+cardId)
+  if(!card) return
+  let costo = 0
+  card.querySelectorAll('.ing-row').forEach(row => {
+    const k = row.dataset.k
+    const gInp = row.querySelector('.ing-g-inp')
+    const costEl = row.querySelector('.ing-cost')
+    if(!gInp || !costEl) return
+    const g = parseFloat(gInp.value) || 0
+    const c = costoIng(k, g)
+    costo += c
+    costEl.textContent = money(c)
+  })
+  const pvInp = card.querySelector('.pv-inp')
+  const pv = pvInp ? (parseFloat(pvInp.value) || 0) : 0
+  const margen = pv > 0 ? ((pv - costo) / pv * 100).toFixed(1) : '0.0'
+  const gan = pv - costo
+  const margenEl = card.querySelector('.card-margen')
+  const ganEl = card.querySelector('.card-gan')
+  const totalEl = card.querySelector('.card-costo-total')
+  const headerMargen = card.querySelector('.header-margen')
+  const headerPrecio = card.querySelector('.header-precio')
+  if(margenEl) margenEl.textContent = margen + '%'
+  if(ganEl) ganEl.textContent = money(gan) + ' gan.'
+  if(totalEl) totalEl.textContent = money(costo)
+  if(headerMargen) headerMargen.textContent = margen + '%'
+  if(headerPrecio && pvInp) headerPrecio.textContent = money(pv)
+  // color margen
+  const color = margen >= 65 ? 'var(--green)' : margen >= 50 ? 'var(--accent)' : 'var(--red)'
+  if(margenEl) margenEl.style.color = color
+  if(headerMargen) headerMargen.style.color = color
+}
+
+const INP_STYLE = 'background:var(--surface2);border:.5px solid var(--border2);border-radius:3px;padding:.15rem .35rem;color:var(--accent);font-family:var(--mono);font-size:.75rem;outline:none;text-align:right;transition:border-color .15s;width:58px'
+const PV_STYLE  = 'background:var(--surface2);border:.5px solid var(--border2);border-radius:3px;padding:.2rem .4rem;color:var(--accent);font-family:var(--mono);font-size:.78rem;outline:none;text-align:right;transition:border-color .15s;width:90px'
+
 function renderCostos(){
   const el = document.getElementById('costos-lista')
   if(!el) return
   let html = ''
 
   const renderCard = (rec, tipo) => {
-    const costo = costoReceta(rec, tipo)
-    const margen = ((rec.pv - costo) / rec.pv * 100).toFixed(1)
-    const id = 'cc_'+tipo+'_'+rec.n.replace(/\s/g,'_')
-    html += `<div class="costo-card">
-      <div class="costo-header" onclick="toggleCostoBody('${id}')">
+    const cardId = tipo+'_'+rec.n.replace(/[^a-zA-Z0-9]/g,'_')
+    const bodyId = 'cc_'+cardId
+    const pvSaved = getRec(tipo, rec.n, 'pv', rec.pv)
+    const costo = (() => {
+      let t = 0
+      rec.ingredientes.forEach(ing => {
+        const k = ing.k
+        const gSaved = getRec(tipo, rec.n, 'g_'+k+'_'+(ing.desc||'').replace(/\s/g,'_'), ing.g)
+        t += costoIng(k, gSaved)
+      })
+      return t
+    })()
+    const margen = pvSaved > 0 ? ((pvSaved - costo) / pvSaved * 100).toFixed(1) : '0.0'
+    const margenColor = margen >= 65 ? 'var(--green)' : margen >= 50 ? 'var(--accent)' : 'var(--red)'
+    const tipoLabel = tipo==='roll'?'Roll · 8pzs':'Nigiri · 1pz'
+
+    html += `<div class="costo-card" id="card_${cardId}">
+      <div class="costo-header" onclick="toggleCostoBody('${bodyId}')">
         <div>
           <span class="costo-nombre">${rec.n}</span>
-          <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted);margin-left:.5rem">${tipo==='roll'?'Roll · 8pzs':tipo==='nigiri'?'Nigiri · 1pz':'Salsa'}</span>
+          <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted);margin-left:.5rem">${tipoLabel}</span>
         </div>
         <div class="costo-badges">
-          <span class="costo-margen">${margen}%</span>
-          <span class="costo-precio">${money(rec.pv)}</span>
+          <span class="header-margen" style="font-family:var(--mono);font-size:.72rem;color:${margenColor}">${margen}%</span>
+          <span class="header-precio" style="font-family:var(--mono);font-size:.72rem;color:var(--accent)">${money(pvSaved)}</span>
           <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted)">▾</span>
         </div>
       </div>
-      <div class="costo-body" id="${id}">`
-    
+      <div class="costo-body" id="${bodyId}">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:.5px solid var(--border2);margin-bottom:.25rem">
+          <span style="font-size:.75rem;color:var(--dim)">Precio de venta</span>
+          <input class="pv-inp" type="number" step="500" value="${pvSaved}" style="${PV_STYLE}"
+            oninput="setRec('${tipo}','${rec.n}','pv',this.value);recalcCard('${cardId}')"
+            onfocus="this.style.borderColor='var(--accent2)'" onblur="this.style.borderColor='var(--border2)'">
+        </div>`
+
     rec.ingredientes.forEach(ing => {
-      const g = ing.g || ing[1] || 0
-      const k = ing.k || ing[0]
-      const desc = ing.desc || (INSUMOS_BASE[k]?.n || k)
-      const c = costoIng(k, g)
-      html += `<div class="costo-row">
-        <span class="costo-ing">${desc}</span>
-        <div style="display:flex;align-items:center;gap:.5rem">
-          <span class="costo-g">${ing.hoja?g+'hj':g+'g'}</span>
-          <span class="costo-val">${money(c)}</span>
+      const k = ing.k
+      const storageKey = 'g_'+k+'_'+(ing.desc||'').replace(/\s/g,'_')
+      const gSaved = getRec(tipo, rec.n, storageKey, ing.g)
+      const c = costoIng(k, gSaved)
+      const unit = ing.hoja ? 'hj' : 'g'
+      html += `<div class="costo-row ing-row" data-k="${k}" data-skey="${storageKey}" data-tipo="${tipo}" data-rec="${rec.n}">
+        <span class="costo-ing">${ing.desc}</span>
+        <div style="display:flex;align-items:center;gap:.4rem">
+          <input class="ing-g-inp" type="number" step="1" value="${gSaved}" style="${INP_STYLE}"
+            oninput="setRec('${tipo}','${rec.n}','${storageKey}',this.value);recalcCard('${cardId}')"
+            onfocus="this.style.borderColor='var(--accent2)'" onblur="this.style.borderColor='var(--border2)'">
+          <span style="font-family:var(--mono);font-size:.62rem;color:var(--muted);min-width:14px">${unit}</span>
+          <span class="ing-cost costo-val">${money(c)}</span>
         </div>
       </div>`
     })
 
     html += `<div class="costo-total-row">
-        <span class="costo-total-lbl">Costo total · margen ${margen}%</span>
-        <span class="costo-total-val">${money(costo)} / ${money(rec.pv - costo)} gan.</span>
+        <div style="display:flex;flex-direction:column;gap:.1rem">
+          <span class="costo-total-lbl">Costo total</span>
+          <span class="card-margen" style="font-family:var(--mono);font-size:.75rem;color:${margenColor}">${margen}% margen</span>
+        </div>
+        <div style="text-align:right">
+          <span class="card-costo-total costo-total-val">${money(costo)}</span>
+          <div class="card-gan" style="font-family:var(--mono);font-size:.72rem;color:var(--green);margin-top:.1rem">${money(pvSaved-costo)} gan.</div>
+        </div>
       </div>
       </div>
     </div>`
@@ -1855,7 +1931,7 @@ function renderCostos(){
     html += `<div class="slabel" style="margin-top:1.25rem">Salsas</div>`
     RECETAS_SALSAS.forEach(s => {
       const cBatch = s.ingredientes.reduce((a,ing)=>{
-        const g = ing.g || ing[1] || 0
+        const g = ing.g || 0
         const k = ing.k || ing[0]
         return a + (INSUMOS_BASE[k] ? getP(k)*g : 0)
       }, 0)
@@ -1872,7 +1948,7 @@ function renderCostos(){
         </div>
         <div class="costo-body" id="${id}">`
       s.ingredientes.forEach(ing => {
-        const g = ing.g || ing[1] || 0
+        const g = ing.g || 0
         const k = ing.k || ing[0]
         const n = INSUMOS_BASE[k]?.n || k
         const c = INSUMOS_BASE[k] ? getP(k)*g : 0
