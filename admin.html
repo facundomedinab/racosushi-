@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raco Sushi · Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+/* LOGIN */
+.login-wrap{position:fixed;inset:0;background:#080808;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1.5rem}
+.login-wrap.hidden{display:none}
+.login-brand{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:1rem}
+.login-title{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:#efefef;margin-bottom:.5rem}
+.login-sub{font-size:.78rem;color:#666;font-family:'DM Mono',monospace}
+.login-input{background:#111;border:.5px solid #2a2a2a;border-radius:4px;padding:.75rem 1rem;color:#efefef;font-family:'DM Mono',monospace;font-size:.9rem;outline:none;width:280px;text-align:center;letter-spacing:.15em;transition:border-color .2s}
+.login-input:focus{border-color:#c9a96e}
+.login-btn{background:#c9a96e;color:#080808;border:none;border-radius:4px;padding:.65rem 2rem;font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500;cursor:pointer;transition:background .2s;width:280px}
+.login-btn:hover{background:#d4b87a}
+.login-error{font-size:.72rem;color:#f87171;font-family:'DM Mono',monospace;display:none}
+
+/* APP */
+.app-wrap{display:none}
+.app-wrap.visible{display:block}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;--surface:#141414;--surface2:#1a1a1a;
+  --border:#222;--border2:#2e2e2e;--muted:#555;--dim:#888;
+  --text:#e8e8e8;--text2:#aaa;
+  --accent:#c9a96e;--accent2:#a07840;
+  --green:#6fcf97;--red:#eb5757;--blue:#60a5fa;
+  --sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;padding-bottom:6rem}
+.app{max-width:640px;margin:0 auto;padding:1.5rem 1rem}
+.logo{font-family:var(--mono);font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1.25rem}
+.tabs{display:flex;gap:0;margin-bottom:1.75rem;border-bottom:.5px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:none;border:none;color:var(--muted);font-family:var(--mono);font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;padding:.5rem .75rem .55rem;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-.5px;white-space:nowrap;transition:color .15s,border-color .15s;flex-shrink:0}
+.tab:hover{color:var(--dim)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:none}.panel.on{display:block}
+
+/* fields */
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1.5rem}
+.field{display:flex;flex-direction:column;gap:.3rem}
+.field label{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.field input{background:var(--surface);border:.5px solid var(--border2);border-radius:5px;padding:.5rem .65rem;color:var(--text);font-family:var(--sans);font-size:.85rem;outline:none;transition:border-color .15s}
+.field input:focus{border-color:var(--accent2)}
+.field input::placeholder{color:var(--muted)}
+.field.full{grid-column:1/-1}
+.addr-wrap{position:relative}
+.addr-wrap input{padding-right:2.2rem}
+.addr-map-btn{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:.85rem;padding:.2rem;transition:color .15s;line-height:1}
+.addr-map-btn:hover{color:var(--blue)}
+
+/* section label */
+.slabel{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:.6rem 0;border-bottom:.5px solid var(--border);margin-bottom:.5rem;margin-top:1.5rem;display:flex;justify-content:space-between;align-items:center}
+.slabel span{color:var(--dim)}
+
+/* items */
+.items{display:flex;flex-direction:column;gap:.3rem}
+.item{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.75rem;padding:.6rem .65rem;background:var(--surface);border:.5px solid var(--border);border-radius:5px;transition:border-color .15s,background .15s}
+.item:hover{border-color:var(--border2)}
+.item.on{border-color:var(--accent2);background:var(--surface2)}
+.iname{font-size:.85rem;font-weight:500}
+.imeta{font-size:.7rem;color:var(--muted);margin-top:.15rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.tag{font-size:.6rem;padding:.1rem .4rem;border-radius:3px;letter-spacing:.04em}
+.t-sal{background:#2a1515;color:#f87171}.t-tru{background:#151c2a;color:#93c5fd}
+.t-lan{background:#1f1708;color:#fcd34d}.t-pes{background:#0f1f12;color:#86efac}.t-iku{background:#1a0f2e;color:#c4b5fd}
+.ctrl{display:flex;align-items:center;gap:.3rem}
+.cbtn{width:24px;height:24px;border:.5px solid var(--border2);border-radius:4px;background:transparent;color:var(--dim);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;line-height:1;user-select:none;-webkit-user-select:none}
+.cbtn:active{transform:scale(.92)}
+.cbtn:hover{border-color:var(--accent2);color:var(--accent)}
+.qval{font-family:var(--mono);font-size:.8rem;min-width:18px;text-align:center}
+.isub{font-family:var(--mono);font-size:.75rem;color:var(--dim);white-space:nowrap;min-width:56px;text-align:right}
+.item.on .isub{color:var(--accent)}
+
+/* summary */
+.sbox{background:var(--surface);border:.5px solid var(--border2);border-radius:8px;padding:1rem;margin-top:1.5rem}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:.3rem 0}
+.srow+.srow{border-top:.5px solid var(--border)}
+.rlbl{font-size:.8rem;color:var(--dim)}
+.rval{font-family:var(--mono);font-size:.85rem}
+.rval.big{font-size:1.15rem;font-weight:500;color:var(--accent)}
+.rval.sm{color:var(--muted);font-size:.7rem}
+.empty-msg{text-align:center;padding:1.25rem 0;font-size:.8rem;color:var(--muted)}
+.envio-inp{background:var(--surface2);border:.5px solid var(--border2);border-radius:4px;padding:.25rem .5rem;color:var(--text);font-family:var(--mono);font-size:.8rem;outline:none;width:90px;text-align:right;transition:border-color .15s}
+.envio-inp:focus{border-color:var(--accent2)}
+
+/* buttons */
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.75rem}
+.btn{padding:.55rem;border-radius:5px;font-family:var(--mono);font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:center;border:none}
+.btn.gold{background:var(--accent);color:#0d0d0d;font-weight:500}.btn.gold:hover{background:#d4b87a}
+.btn.wa{background:#1a3a22;color:#86efac;border:.5px solid #2d5c37}.btn.wa:hover{background:#1f4428}
+.btn.ghost{background:transparent;border:.5px solid var(--border);color:var(--muted)}.btn.ghost:hover{border-color:var(--dim);color:var(--text2)}
+.btn.red{background:transparent;border:.5px solid var(--border);color:var(--muted);width:100%;margin-top:.4rem}.btn.red:hover{border-color:var(--red);color:var(--red)}
+
+/* orden card */
+.ord-item{background:var(--surface);border:.5px solid var(--border);border-radius:6px;padding:.75rem;margin-bottom:.4rem;transition:opacity .2s,border-color .2s}
+.ord-item.listo{opacity:.55;border-color:#1e2e1e}
+.ord-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.35rem;gap:.5rem}
+.ord-num{display:inline-block;background:var(--surface2);border:.5px solid var(--border2);border-radius:3px;font-family:var(--mono);font-size:.6rem;padding:.05rem .35rem;color:var(--accent);margin-right:.35rem}
+.ord-num.listo{color:var(--green);background:#0a1a0a;border-color:#1e3a1e}
+.ord-cliente{font-size:.85rem;font-weight:500}
+.ord-fecha{font-size:.72rem;color:var(--muted)}
+.ord-total{font-family:var(--mono);font-size:.85rem;color:var(--accent);white-space:nowrap}
+.ord-detalle{font-size:.75rem;color:var(--dim);line-height:1.6;margin-top:.2rem}
+.ord-addr{font-size:.72rem;color:var(--blue);margin-top:.25rem;cursor:pointer;display:inline-flex;align-items:center;gap:.25rem}
+.ord-addr:hover{text-decoration:underline}
+.ord-actions{display:flex;gap:.35rem;margin-top:.6rem;flex-wrap:wrap}
+.ord-btn{background:none;border:.5px solid var(--border);border-radius:4px;padding:.28rem .55rem;font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;color:var(--muted);transition:all .15s}
+.ord-btn:hover{border-color:var(--dim);color:var(--text2)}
+.ord-btn.del:hover{border-color:var(--red);color:var(--red)}
+.ord-btn.g{border-color:#1e3a1e;color:var(--green)}.ord-btn.g:hover{background:#0a1a0a}
+.ord-btn.wa-track{border-color:#1e3a2a;color:#86efac}.ord-btn.wa-track:hover{background:#0f2018}
+
+/* acumulado */
+.acu-table{width:100%;border-collapse:collapse}
+.acu-table th{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:.4rem .5rem;border-bottom:.5px solid var(--border)}
+.acu-table th:last-child{text-align:right}
+.acu-table td{padding:.5rem .5rem;font-size:.82rem;border-bottom:.5px solid var(--border)}
+.acu-table td:last-child{text-align:right}
+.acu-table tr:last-child td{border-bottom:none}
+.acu-table tr:hover td{background:var(--surface2)}
+.acu-qty{display:inline-block;background:var(--surface2);font-family:var(--mono);font-size:.75rem;padding:.1rem .45rem;border-radius:3px;color:var(--accent);margin-right:.4rem;min-width:28px;text-align:center}
+.jornada-total{background:var(--surface);border:.5px solid var(--border2);border-radius:8px;padding:.85rem 1rem;margin-top:1rem}
+.jt-row{display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:.5px solid var(--border)}
+.jt-row:last-child{border-bottom:none}
+.jt-lbl{font-size:.82rem;color:var(--dim)}
+.jt-val{font-family:var(--mono);font-size:.85rem}
+.jt-val.big{font-size:1.1rem;font-weight:500;color:var(--accent)}
+
+/* estadísticas */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1.25rem}
+.stat-card{background:var(--surface);border:.5px solid var(--border2);border-radius:7px;padding:.85rem .9rem}
+.stat-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+.stat-val{font-family:var(--mono);font-size:1.25rem;font-weight:500;color:var(--accent)}
+.stat-val.green{color:var(--green)}
+.stat-val.sm{font-size:.9rem}
+.stat-sub{font-size:.7rem;color:var(--muted);margin-top:.2rem}
+.rank-row{display:flex;justify-content:space-between;align-items:center;padding:.45rem .5rem;border-bottom:.5px solid var(--border)}
+.rank-row:last-child{border-bottom:none}
+.rank-row:hover{background:var(--surface2);border-radius:4px}
+.rank-name{font-size:.82rem}
+.rank-right{display:flex;align-items:center;gap:.65rem}
+.rank-cnt{font-family:var(--mono);font-size:.78rem;color:var(--accent)}
+.rank-bar-wrap{width:60px;height:4px;background:var(--border2);border-radius:2px;overflow:hidden}
+.rank-bar{height:4px;background:var(--accent);border-radius:2px;opacity:.7;transition:width .3s}
+.empty-hist{text-align:center;padding:2rem 0;font-size:.8rem;color:var(--muted)}
+
+/* toast */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(4px);background:var(--surface2);border:.5px solid var(--border2);border-radius:6px;padding:.55rem 1rem;font-family:var(--mono);font-size:.7rem;color:var(--text2);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:99;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ruta */
+.ruta-card{background:var(--surface);border:.5px solid var(--border2);border-radius:8px;overflow:hidden;margin-bottom:1.25rem}
+.ruta-origen{display:flex;align-items:center;gap:.65rem;padding:.75rem 1rem;border-bottom:.5px solid var(--border)}
+.ruta-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ruta-dot.home{background:var(--accent)}
+.ruta-dot.stop{background:var(--blue)}
+.ruta-dot.done{background:var(--green)}
+.ruta-line{width:1.5px;height:18px;background:var(--border2);margin-left:4.25px;flex-shrink:0}
+.ruta-stop{display:flex;align-items:flex-start;gap:.65rem;padding:.65rem 1rem;border-bottom:.5px solid var(--border);transition:background .15s}
+.ruta-stop:last-child{border-bottom:none}
+.ruta-stop:hover{background:var(--surface2)}
+.ruta-stop.done{opacity:.5}
+.ruta-stop-info{flex:1;min-width:0}
+.ruta-stop-cliente{font-size:.85rem;font-weight:500}
+.ruta-stop-addr{font-size:.72rem;color:var(--dim);margin-top:.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ruta-stop-items{font-size:.7rem;color:var(--muted);margin-top:.1rem}
+.ruta-stop-actions{display:flex;flex-direction:column;gap:.3rem;align-items:flex-end;flex-shrink:0}
+.ruta-num{font-family:var(--mono);font-size:.65rem;color:var(--muted)}
+.ruta-empty{text-align:center;padding:2rem 1rem;font-size:.8rem;color:var(--muted)}
+.btn-maps-ruta{background:var(--accent);color:#0d0d0d;border:none;border-radius:5px;padding:.5rem 1rem;font-family:var(--mono);font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;width:100%;font-weight:500;transition:background .15s}
+.btn-maps-ruta:hover{background:#d4b87a}
+.btn-maps-ind{background:transparent;border:.5px solid var(--blue);border-radius:4px;padding:.25rem .55rem;font-family:var(--mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;color:var(--blue);transition:all .15s;white-space:nowrap}
+.btn-maps-ind:hover{background:#0f1f3a}
+@media(max-width:440px){.fields{grid-template-columns:1fr}.btns{grid-template-columns:1fr}.stat-grid{grid-template-columns:1fr}}
+.btn-paste-wa{display:flex;align-items:center;gap:.5rem;width:100%;margin-bottom:1rem;padding:.6rem .85rem;background:var(--surface);border:.5px solid var(--border2);border-radius:6px;color:var(--dim);font-family:var(--mono);font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.btn-paste-wa:hover{border-color:var(--accent2);color:var(--accent)}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-top:.5px solid var(--border2);border-radius:12px 12px 0 0;width:100%;max-width:640px;padding:1.25rem 1.25rem 1.5rem;box-sizing:border-box}
+.modal-title{font-family:var(--mono);font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.75rem}
+.mbtn{padding:.65rem;border-radius:6px;font-family:var(--mono);font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s;border:none;font-weight:500}
+.mbtn.wa{background:#1a3a22;color:#86efac;border:.5px solid #2d5c37}.mbtn.wa:hover{background:#1f4428}
+.mbtn.back{background:transparent;border:.5px solid var(--border2);color:var(--dim)}.mbtn.back:hover{border-color:var(--dim);color:var(--text2)}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-brand">Raco Sushi</div>
+  <div class="login-title">Panel de Administración</div>
+  <div class="login-sub">Ingresá tu contraseña para continuar</div>
+  <input type="password" class="login-input" id="pwd-input" placeholder="••••••••••" 
+    onkeydown="if(event.key==='Enter')checkPwd()">
+  <button class="login-btn" onclick="checkPwd()">Ingresar →</button>
+  <div class="login-error" id="login-error">Contraseña incorrecta</div>
+</div>
+
+<!-- APP ÓRDENES -->
+<div class="app-wrap" id="app-wrap">
+
+<div class="app">
+  <div class="logo">Raco Sushi · Jornada</div>
+  <nav class="tabs">
+    <button class="tab on"  onclick="goTab('nueva',this)">Nueva orden</button>
+    <button class="tab"     onclick="goTab('ordenes',this)">Órdenes <span id="tab-cnt" style="opacity:.6"></span></button>
+    <button class="tab"     onclick="goTab('acumulado',this)">Acumulado</button>
+    <button class="tab"     onclick="goTab('stats',this)">Estadísticas</button>
+    <button class="tab"     onclick="goTab('ruta',this)">Ruta del día</button>
+  </nav>
+
+  <!-- NUEVA ORDEN -->
+  <div id="tab-nueva" class="panel on">
+    <!-- PEGAR PEDIDO WA -->
+    <button class="btn-paste-wa" onclick="abrirPaste()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><rect x="5" y="1" width="9" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="4" width="9" height="12" rx="1.5" fill="var(--surface)" stroke="currentColor" stroke-width="1.3"/></svg>
+      Pegar pedido de WhatsApp
+    </button>
+
+    <div class="fields">
+      <div class="field"><label>Cliente</label><input type="text" id="f-cliente" placeholder="Nombre" autocomplete="off"></div>
+      <div class="field"><label>Fecha</label><input type="text" id="f-fecha" placeholder="" autocomplete="off"></div>
+      <div class="field"><label>Teléfono</label><input type="tel" id="f-tel" placeholder="Ej: 1123456789" autocomplete="off"></div>
+      <div class="field"><label>Nota</label><input type="text" id="f-nota" placeholder="Sin cebolla, etc." autocomplete="off"></div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Dirección de entrega</label>
+        <div style="display:grid;grid-template-columns:1fr auto auto;gap:.4rem;align-items:center">
+          <div class="addr-wrap">
+            <input type="text" id="f-addr" placeholder="Calle" autocomplete="off" oninput="updateMapBtn();buscarDirOrden()">
+            <button class="addr-map-btn" id="map-btn" onclick="abrirMaps()" title="Ver ruta en Maps" style="display:none">📍</button>
+          </div>
+          <input type="text" id="f-numero" placeholder="Nro" autocomplete="off" style="width:64px;background:var(--surface);border:.5px solid var(--border2);border-radius:5px;padding:.5rem .5rem;color:var(--text);font-size:.85rem;outline:none">
+          <input type="text" id="f-dpto" placeholder="Dpto" autocomplete="off" style="width:80px;background:var(--surface);border:.5px solid var(--border2);border-radius:5px;padding:.5rem .5rem;color:var(--text);font-size:.85rem;outline:none">
+        </div>
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Localidad</label>
+        <input type="text" id="f-localidad" placeholder="San Isidro, Martínez, Acassuso..." autocomplete="off" oninput="buscarDirOrden()">
+      </div>
+      <div style="grid-column:1/-1;display:none" id="map-wrap-ord">
+        <div id="map-ord" style="height:160px;border-radius:6px;overflow:hidden;border:.5px solid var(--border2);margin-top:.25rem"></div>
+        <div id="map-ord-label" style="font-size:.7rem;color:var(--muted);margin-top:.3rem;text-align:center"></div>
+        <button onclick="confirmarUbicacionOrden()" id="map-ord-confirm"
+          style="display:none;width:100%;margin-top:.35rem;padding:.45rem;background:var(--accent);color:#0d0d0d;border:none;border-radius:5px;font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;font-weight:500;cursor:pointer">
+          ✓ Confirmar ubicación
+        </button>
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Forma de pago</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">
+          <button type="button" id="fpago-mp" onclick="setPago('mp')"
+            style="padding:.45rem;border-radius:5px;border:.5px solid var(--border2);background:transparent;color:var(--muted);font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s">
+            Mercado Pago
+          </button>
+          <button type="button" id="fpago-ef" onclick="setPago('efectivo')"
+            style="padding:.45rem;border-radius:5px;border:.5px solid var(--border2);background:transparent;color:var(--muted);font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s">
+            Efectivo
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="slabel">Rolls <span>8 piezas · Uramaki</span></div>
+    <div class="items" id="list-rolls"></div>
+    <div class="slabel" style="margin-top:1.25rem">Nigiris <span>por pieza · par = $5.000</span></div>
+    <div class="items" id="list-nigiris"></div>
+    <div class="slabel" style="margin-top:1.25rem">Salsas y Extras</div>
+    <div class="items" id="list-extras"></div>
+    <div class="sbox">
+      <div class="empty-msg" id="s-empty">Agregá productos para armar el pedido</div>
+      <div id="s-detail" style="display:none">
+        <div id="s-desglose"></div>
+        <div class="srow" style="margin-top:.25rem">
+          <span class="rlbl">Subtotal</span><span class="rval" id="s-subtotal">$0</span>
+        </div>
+        <div class="srow">
+          <span class="rlbl">Envío</span>
+          <input class="envio-inp" type="number" id="s-envio" value="0" min="0" step="500" oninput="calcS()">
+        </div>
+        <div class="srow" style="border-top:.5px solid var(--border2);padding-top:.4rem;margin-top:.1rem">
+          <span class="rlbl" style="font-size:.9rem;color:var(--text2)">Total a cobrar</span>
+          <span class="rval big" id="s-total">$0</span>
+        </div>
+        <div class="btns" style="grid-template-columns:1fr">
+          <button class="btn gold" onclick="guardar()">Guardar orden</button>
+        </div>
+        <button class="btn red" onclick="resetOrden()">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÓRDENES -->
+  <div id="tab-ordenes" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <span style="font-size:.8rem;color:var(--dim)" id="ord-subtitulo"></span>
+      <button class="btn ghost" style="padding:.35rem .65rem;font-size:.6rem" onclick="confirmarBorrarTodo()">Limpiar jornada</button>
+    </div>
+    <div id="ord-list"><div class="empty-hist">No hay órdenes todavía</div></div>
+  </div>
+
+  <!-- ACUMULADO -->
+  <div id="tab-acumulado" class="panel">
+    <div id="acu-wrap"><div class="empty-hist">Guardá órdenes para ver el acumulado</div></div>
+  </div>
+
+  <!-- ESTADÍSTICAS -->
+  <div id="tab-stats" class="panel">
+    <div id="stats-wrap"><div class="empty-hist">Guardá órdenes para ver estadísticas</div></div>
+  </div>
+
+  <!-- RUTA DEL DÍA -->
+  <div id="tab-ruta" class="panel">
+    <div id="ruta-wrap"><div class="empty-hist">Agregá direcciones a las órdenes para ver la ruta</div></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- MODAL PASTE WA -->
+<div class="overlay" id="paste-overlay" onclick="cerrarPasteClick(event)">
+  <div class="modal" id="paste-modal" style="padding-bottom:1.5rem;max-height:75vh;overflow-y:auto;display:flex;flex-direction:column">
+    <div style="flex-shrink:0">
+      <div class="modal-title" style="margin-bottom:.35rem">Pegar pedido de WhatsApp</div>
+      <div style="font-size:.75rem;color:var(--dim);margin-bottom:.75rem">Copiá el mensaje que te mandó el cliente y pegalo acá</div>
+      <textarea id="paste-text"
+        placeholder="- 2x NY Phila...&#10;Nombre: ...&#10;Telefono: ...&#10;Direccion: ..."
+        style="width:100%;height:110px;background:var(--surface2);border:.5px solid var(--border2);border-radius:6px;padding:.6rem .7rem;color:var(--text);font-family:var(--mono);font-size:.75rem;resize:none;outline:none;line-height:1.6;display:block;box-sizing:border-box"
+      ></textarea>
+      <div id="paste-error" style="font-size:.72rem;color:var(--red);margin-top:.35rem;display:none"></div>
+    </div>
+    <div id="paste-preview" style="display:none;margin-top:.75rem;flex-shrink:0">
+      <div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem">Detectado</div>
+      <div id="paste-preview-inner" style="background:var(--surface2);border-radius:6px;padding:.6rem .7rem;font-size:.78rem;line-height:1.7"></div>
+    </div>
+    <div class="modal-btns" style="margin-top:.75rem;flex-shrink:0">
+      <button class="mbtn back" onclick="cerrarPaste()">← Cancelar</button>
+      <button class="mbtn wa" id="paste-confirm-btn" onclick="confirmarPaste()" style="display:none">Cargar orden →</button>
+      <button class="mbtn" id="paste-parse-btn" onclick="parsearPaste()" style="background:var(--border2);color:var(--text2);border:none">Leer mensaje</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MI_DIR='Francia 353, San Isidro, Buenos Aires, Argentina'
+const ROLLS=[
+  // Salmon
+  {n:'NY Phila',d:'NY Phila',p:'Salmon',v:10000,spicy:false},
+  {n:'Salmon Palta',d:'Salmón · Palta',p:'Salmon',v:10000,spicy:false},
+  // Trucha
+  {n:'Maracuya',d:'Maracuyá',p:'Trucha',v:13000,spicy:false},
+  {n:'Aji Roll',d:'Ají Roll',p:'Trucha',v:13000,spicy:false},
+  {n:'Spicy Trucha 🌶',d:'Spicy Trucha 🌶',p:'Trucha',v:13000,spicy:true},
+  // Pesca blanca
+  {n:'Krein',d:'Krein',p:'Pesca blanca',v:13000,spicy:false},
+  {n:'Acevichado',d:'Acevichado',p:'Pesca blanca',v:13000,spicy:false},
+  {n:'Shiro',d:'Shiro',p:'Pesca blanca',v:13000,spicy:false},
+  // Langostino
+  {n:'Ebi Furai',d:'Ebi Furai',p:'Langostino',v:10000,spicy:false},
+  {n:'Rocoto Lango 🌶',d:'Rocoto Lango 🌶',p:'Langostino',v:13000,spicy:true},
+  {n:'Kimchi Lango',d:'Kimchi Lango',p:'Langostino',v:13000,spicy:false},
+]
+const NIGIRIS=[
+  // Trucha
+  {n:'Trucha Chalaquita',p:'Trucha',v:2500},
+  {n:'Trucha Flambeada',p:'Trucha',v:2500},
+  {n:'Trucha Filo Maracuyá',p:'Trucha',v:2500},
+  {n:'Trucha Trufa Lima',p:'Trucha',v:2500},
+  // Pesca blanca
+  {n:'Pesca Rocoto 🌶',p:'Pesca blanca',v:2500,spicy:true},
+  {n:'Pesca Kimchi',p:'Pesca blanca',v:2500},
+  {n:'Pesca Acevichada',p:'Pesca blanca',v:2500},
+  // Langostino
+  {n:'Langostino',p:'Langostino',v:2500},
+  // Ikura
+  {n:'Ikura Boken Dip',p:'Ikura',v:2500},
+]
+const EXTRAS=[
+  {n:'Extra Salsa Soja', p:'Extra', v:700},
+  {n:'Extra Jengibre',   p:'Extra', v:700},
+  {n:'Salsa Teriyaki',   p:'Extra', v:700},
+]
+const TAG={'Salmon':'t-sal','Trucha':'t-tru','Langostino':'t-lan','Pesca blanca':'t-pes','Ikura':'t-iku','Extra':'b-piezas'}
+const rq=new Array(ROLLS.length).fill(0)
+const nq=new Array(NIGIRIS.length).fill(0)
+const eq=new Array(EXTRAS.length).fill(0)
+const $=id=>document.getElementById(id)
+const money=n=>'$'+Math.round(n).toLocaleString('es-AR')
+const today=()=>{const d=new Date();return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`}
+
+$('f-fecha').placeholder=today()
+
+// Tabs
+function goTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'))
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'))
+  $('tab-'+name).classList.add('on')
+  if(btn)btn.classList.add('on')
+  if(name==='ordenes')renderOrdenes()
+  if(name==='acumulado')renderAcumulado()
+  if(name==='stats')renderStats()
+  if(name==='ruta')renderRuta()
+}
+
+// Maps
+function updateMapBtn(){
+  const addr=$('f-addr').value.trim()
+  $('map-btn').style.display=addr?'block':'none'
+  const envioEl=$('s-envio')
+  if(addr&&(parseInt(envioEl.value)||0)===0){
+    envioEl.value=2500
+    calcS()
+  } else if(!addr){
+    envioEl.value=0
+    calcS()
+  }
+}
+
+function getAddrParaMaps(){
+  const calle=$('f-addr').value.trim()
+  const numero=$('f-numero')?$('f-numero').value.trim():''
+  const localidad=$('f-localidad')?$('f-localidad').value.trim():''
+  return [calle, numero, localidad].filter(Boolean).join(' ')
+}
+
+function abrirMaps(addr){
+  const dest=encodeURIComponent(addr||getAddrParaMaps())
+  if(!dest)return
+  window.open(`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(MI_DIR)}&destination=${dest}&travelmode=driving`,'_blank')
+}
+
+// ── PARSER PEDIDO WA ─────────────────────────────────────────────
+let parsedOrden = null
+
+function abrirPaste(){
+  const ov = document.getElementById('paste-overlay')
+  document.getElementById('paste-text').value = ''
+  document.getElementById('paste-error').style.display = 'none'
+  document.getElementById('paste-preview').style.display = 'none'
+  document.getElementById('paste-confirm-btn').style.display = 'none'
+  document.getElementById('paste-parse-btn').style.display = 'block'
+  ov.classList.add('show')
+  document.body.style.overflow = 'hidden'
+  setTimeout(()=>document.getElementById('paste-text').focus(), 200)
+}
+
+function cerrarPaste(){
+  document.getElementById('paste-overlay').classList.remove('show')
+  document.body.style.overflow = ''
+}
+
+function cerrarPasteClick(e){
+  if(e.target === document.getElementById('paste-overlay')) cerrarPaste()
+}
+
+function parsearPaste(){
+  const txt = document.getElementById('paste-text').value.trim()
+  const errEl = document.getElementById('paste-error')
+  errEl.style.display = 'none'
+
+  if(!txt){ errEl.textContent = 'Pegá el mensaje primero'; errEl.style.display='block'; return }
+
+  // Normalizar: quitar tildes, emojis y pasar a minúsculas
+  const norm = s => s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')  // quitar tildes
+    .replace(/[\u{1F300}-\u{1FFFF}]/gu,'')            // quitar emojis
+    .replace(/🌶/g,'').trim()
+
+  const lines = txt.split('\n').map(l=>l.trim()).filter(Boolean)
+  const orden = { cliente:'', tel:'', addr:'', dpto:'', nota:'', hora:'', pago:'', items:[] }
+
+  lines.forEach(line => {
+    const low = line.toLowerCase()
+    if(low.startsWith('nombre:') || low.startsWith('name:'))
+      orden.cliente = line.split(':').slice(1).join(':').trim()
+    else if(low.startsWith('telefono:') || low.startsWith('tel:'))
+      orden.tel = line.split(':').slice(1).join(':').trim().replace(/\D/g,'')
+    else if(low.startsWith('hora del pedido:') || low.startsWith('hora:'))
+      orden.hora = line.split(':').slice(1).join(':').trim()
+    else if(low.startsWith('pago:'))
+      orden.pago = line.split(':').slice(1).join(':').trim()
+    else if(low.startsWith('direccion:') || low.startsWith('dirección:') || low.startsWith('dir:')) {
+      const addrFull = line.split(':').slice(1).join(':').trim()
+      const dptoMatch = addrFull.match(/[,\s]+([0-9]+[A-Za-z]|[A-Za-z][0-9])\s*$/)
+      if(dptoMatch){ orden.dpto = dptoMatch[1]; orden.addr = addrFull.slice(0, addrFull.lastIndexOf(dptoMatch[0])).trim() }
+      else orden.addr = addrFull
+    }
+    else if(low.startsWith('nota:') || low.startsWith('aclaracion:'))
+      orden.nota = line.split(':').slice(1).join(':').trim()
+    else {
+      const m = line.match(/^[-•*]?\s*(\d+)\s*[xX×]\s*(.+?)(?:\s*[-–]\s*\$[\d.,]+)?$/)
+      if(m){
+        const qty = parseInt(m[1])
+        const nameRaw = norm(m[2])
+        let matched = null
+
+        // Buscar en ROLLS — comparar nombre normalizado contra n, d, y palabras clave
+        ROLLS.forEach((r,i)=>{
+          if(matched) return
+          const rn = norm(r.n)
+          const rd = norm(r.d||'')
+          // match exacto o por palabras principales
+          if(rn === nameRaw || rd === nameRaw) { matched = {type:'r',idx:i,qty,name:r.d||r.n}; return }
+          // match por palabras: todas las palabras del nombre del roll están en el input
+          const words = rn.split(' ').filter(w=>w.length>2)
+          if(words.length && words.every(w=>nameRaw.includes(w))) { matched = {type:'r',idx:i,qty,name:r.d||r.n}; return }
+          // match inverso: las palabras del input están en el nombre del roll
+          const inputWords = nameRaw.split(' ').filter(w=>w.length>2)
+          if(inputWords.length && inputWords.every(w=>rn.includes(w))) { matched = {type:'r',idx:i,qty,name:r.d||r.n} }
+        })
+
+        if(!matched) NIGIRIS.forEach((n,i)=>{
+          if(matched) return
+          const nn = norm(n.n)
+          if(nn === nameRaw) { matched = {type:'n',idx:i,qty,name:n.n}; return }
+          const words = nn.split(' ').filter(w=>w.length>2)
+          if(words.length && words.every(w=>nameRaw.includes(w))) { matched = {type:'n',idx:i,qty,name:n.n}; return }
+          const inputWords = nameRaw.split(' ').filter(w=>w.length>2)
+          if(inputWords.length && inputWords.every(w=>nn.includes(w))) { matched = {type:'n',idx:i,qty,name:n.n} }
+        })
+
+        if(!matched) EXTRAS.forEach((e,i)=>{
+          if(matched) return
+          const en = norm(e.n)
+          if(en === nameRaw) { matched = {type:'e',idx:i,qty,name:e.n}; return }
+          const words = en.split(' ').filter(w=>w.length>2)
+          if(words.length && words.every(w=>nameRaw.includes(w))) { matched = {type:'e',idx:i,qty,name:e.n}; return }
+          const inputWords = nameRaw.split(' ').filter(w=>w.length>2)
+          if(inputWords.length && inputWords.every(w=>en.includes(w))) { matched = {type:'e',idx:i,qty,name:e.n} }
+        })
+
+        if(matched) orden.items.push(matched)
+        else orden.items.push({type:'?', idx:-1, qty, name:m[2].trim(), raw:true})
+      }
+    }
+  })
+
+  if(!orden.cliente && !orden.items.length){
+    errEl.textContent = 'No pude leer el mensaje. Verificá que sea el formato correcto.'
+    errEl.style.display = 'block'; return
+  }
+
+  parsedOrden = orden
+
+  const prev = document.getElementById('paste-preview-inner')
+  let html = ''
+  if(orden.cliente) html += '<div style="margin-bottom:.3rem"><span style="color:var(--muted);font-size:.7rem">Cliente </span><strong>'+orden.cliente+'</strong></div>'
+  if(orden.tel)     html += '<div style="margin-bottom:.3rem"><span style="color:var(--muted);font-size:.7rem">Tel </span>'+orden.tel+'</div>'
+  if(orden.addr)    html += '<div style="margin-bottom:.5rem"><span style="color:var(--muted);font-size:.7rem">Dir </span>'+orden.addr+(orden.dpto?' ('+orden.dpto+')':'')+'</div>'
+  if(orden.items.length){
+    html += '<div style="border-top:.5px solid var(--border);padding-top:.4rem">'
+    orden.items.forEach(it=>{
+      const color = it.raw ? 'var(--red)' : 'var(--green)'
+      const warn = it.raw ? ' ⚠ no reconocido' : ''
+      html += '<div style="color:'+color+';font-size:.75rem">'+it.qty+'× '+it.name+warn+'</div>'
+    })
+    html += '</div>'
+  }
+  prev.innerHTML = html
+  document.getElementById('paste-preview').style.display = 'block'
+  document.getElementById('paste-confirm-btn').style.display = 'block'
+  document.getElementById('paste-parse-btn').style.display = 'none'
+}
+
+function confirmarPaste(){
+  if(!parsedOrden) return
+  const o = parsedOrden
+
+  // Cargar campos
+  const setV = (id,v) => { const el=document.getElementById(id); if(el && v) el.value=v }
+  setV('f-cliente', o.cliente)
+  setV('f-tel',     o.tel)
+  setV('f-nota',    o.nota)
+  // Parsear dirección en partes: calle número, dpto, localidad
+  if(o.addr){
+    // Separar localidad (última parte después de la última coma si hay)
+    const parts = o.addr.split(',').map(s=>s.trim())
+    if(parts.length >= 3){
+      // calle numero, dpto, localidad
+      const calleNum = parts[0].trim()
+      const calleMatch = calleNum.match(/^(.+?)\s+(\d+\w*)\s*$/)
+      if(calleMatch){ setV('f-addr', calleMatch[1]); setV('f-numero', calleMatch[2]) }
+      else setV('f-addr', calleNum)
+      setV('f-dpto', parts[1])
+      setV('f-localidad', parts.slice(2).join(', '))
+    } else if(parts.length === 2){
+      const calleNum = parts[0].trim()
+      const calleMatch = calleNum.match(/^(.+?)\s+(\d+\w*)\s*$/)
+      if(calleMatch){ setV('f-addr', calleMatch[1]); setV('f-numero', calleMatch[2]) }
+      else setV('f-addr', calleNum)
+      // segunda parte puede ser dpto o localidad
+      if(/^\d*[a-zA-Z]\w*$/.test(parts[1])) setV('f-dpto', parts[1])
+      else setV('f-localidad', parts[1])
+    } else {
+      // todo junto: intentar separar calle y número
+      const calleMatch = o.addr.match(/^(.+?)\s+(\d+\w*)\s*$/)
+      if(calleMatch){ setV('f-addr', calleMatch[1]); setV('f-numero', calleMatch[2]) }
+      else setV('f-addr', o.addr)
+    }
+  }
+  if(o.dpto) setV('f-dpto', o.dpto)
+  // Si el mensaje trae hora, pre-rellenar la fecha con ella
+  if(o.hora) {
+    const now=new Date()
+    const fechaHoy=`${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`
+    const fechaEl=document.getElementById('f-fecha')
+    if(fechaEl && !fechaEl.value) fechaEl.value=fechaHoy
+    // Guardar hora para usarla al guardar
+    window._parsedHora = o.hora
+  }
+  if(o.pago) { window._parsedPago = o.pago; setPago(o.pago.toLowerCase().includes('mercado')||o.pago.toLowerCase()==='mp'?'mp':'efectivo') }
+
+  // Reset cantidades
+  rq.fill(0); nq.fill(0); eq.fill(0)
+  buildList(ROLLS,   rq, 'r', 'list-rolls')
+  buildList(NIGIRIS, nq, 'n', 'list-nigiris')
+  buildList(EXTRAS,  eq, 'e', 'list-extras')
+
+  // Cargar productos reconocidos
+  o.items.forEach(it=>{
+    if(it.raw) return
+    if(it.type==='r') {
+      rq[it.idx] = it.qty
+      const qel = document.getElementById('r-q-'+it.idx)
+      const sel = document.getElementById('r-sub-'+it.idx)
+      const rel = document.getElementById('r-row-'+it.idx)
+      if(qel) qel.textContent = it.qty
+      if(sel) sel.textContent = it.qty>0 ? money(ROLLS[it.idx].v*it.qty) : ''
+      if(rel) rel.className = 'item on'
+    }
+    if(it.type==='n') {
+      nq[it.idx] = it.qty
+      const qel = document.getElementById('n-q-'+it.idx)
+      const sel = document.getElementById('n-sub-'+it.idx)
+      const rel = document.getElementById('n-row-'+it.idx)
+      if(qel) qel.textContent = it.qty
+      if(sel) sel.textContent = it.qty>0 ? money(NIGIRIS[it.idx].v*it.qty) : ''
+      if(rel) rel.className = 'item on'
+    }
+    if(it.type==='e') {
+      eq[it.idx] = it.qty
+      const qel = document.getElementById('e-q-'+it.idx)
+      const sel = document.getElementById('e-sub-'+it.idx)
+      const rel = document.getElementById('e-row-'+it.idx)
+      if(qel) qel.textContent = it.qty
+      if(sel) sel.textContent = it.qty>0 ? money(EXTRAS[it.idx].v*it.qty) : ''
+      if(rel) rel.className = 'item on'
+    }
+  })
+
+  // Auto-set envío si hay dirección
+  const envioEl = document.getElementById('s-envio')
+  if(o.addr && envioEl) envioEl.value = 2500
+
+  // Actualizar map btn y calcular summary
+  updateMapBtn()
+  calcS()
+
+  cerrarPaste()
+  // Limpiar el modal para la próxima vez
+  document.getElementById('paste-text').value=''
+  document.getElementById('paste-preview').style.display='none'
+  showToast('Pedido cargado ✓')
+
+  // Scroll suave al inicio del formulario
+  document.getElementById('tab-nueva').scrollIntoView({behavior:'smooth', block:'start'})
+}
+
+// Forma de pago en formulario
+let formPago = ''
+function setPago(tipo){
+  formPago = tipo
+  const mp=$('fpago-mp'), ef=$('fpago-ef')
+  mp.style.background='transparent';mp.style.color='var(--muted)';mp.style.borderColor='var(--border2)'
+  ef.style.background='transparent';ef.style.color='var(--muted)';ef.style.borderColor='var(--border2)'
+  if(tipo==='mp'){mp.style.background='#003d5c';mp.style.color='#009ee3';mp.style.borderColor='#009ee3'}
+  else{ef.style.background='#0a1f0a';ef.style.color='#6fcf97';ef.style.borderColor='#6fcf97'}
+}
+
+// Build lists
+
+function buildList(items,qtys,prefix,cid){
+  const el=$(cid);el.innerHTML=''
+  items.forEach((it,i)=>{
+    const d=document.createElement('div')
+    d.className='item'+(qtys[i]>0?' on':'')
+    d.id=`${prefix}-row-${i}`
+    d.innerHTML=`
+      <div>
+        <div class="iname">${it.d||it.n}${it.spicy?' <span style="font-size:.7rem"></span>':''}</div>
+        <div class="imeta"><span class="tag ${TAG[it.p]||'t-pes'}">${it.p}</span>${money(it.v)}</div>
+      </div>
+      <div class="ctrl">
+        <button class="cbtn" onclick="chg('${prefix}',${i},-1)">−</button>
+        <span class="qval" id="${prefix}-q-${i}">0</span>
+        <button class="cbtn" onclick="chg('${prefix}',${i},1)">+</button>
+      </div>
+      <div class="isub" id="${prefix}-sub-${i}"></div>`
+    el.appendChild(d)
+  })
+}
+
+function chg(prefix,i,delta){
+  const isR=prefix==='r',isE=prefix==='e'
+  const qtys=isR?rq:isE?eq:nq
+  const items=isR?ROLLS:isE?EXTRAS:NIGIRIS
+  qtys[i]=Math.max(0,qtys[i]+delta)
+  $(`${prefix}-q-${i}`).textContent=qtys[i]
+  $(`${prefix}-sub-${i}`).textContent=qtys[i]>0?money(items[i].v*qtys[i]):''
+  $(`${prefix}-row-${i}`).className='item'+(qtys[i]>0?' on':'')
+  calcS()
+}
+
+function calcS(){
+  let sub=0,cnt=0
+  ROLLS.forEach((it,i)=>{sub+=it.v*rq[i];cnt+=rq[i]})
+  NIGIRIS.forEach((it,i)=>{sub+=it.v*nq[i];cnt+=nq[i]})
+  EXTRAS.forEach((it,i)=>{sub+=it.v*eq[i];cnt+=eq[i]})
+  $('s-empty').style.display=cnt?'none':'block'
+  $('s-detail').style.display=cnt?'block':'none'
+  if(!cnt)return
+  const envio=parseInt($('s-envio').value)||0
+  $('s-subtotal').textContent=money(sub)
+  $('s-total').textContent=money(sub+envio)
+  const lines=[
+    ...ROLLS.map((it,i)=>rq[i]>0?{n:`${rq[i]}× ${it.n}`,v:money(it.v*rq[i])}:null),
+    ...NIGIRIS.map((it,i)=>nq[i]>0?{n:`${nq[i]}× ${it.n}`,v:money(it.v*nq[i])}:null),
+    ...EXTRAS.map((it,i)=>eq[i]>0?{n:`${eq[i]}× ${it.n}`,v:money(it.v*eq[i])}:null),
+  ].filter(Boolean)
+  $('s-desglose').innerHTML=lines.map(l=>`<div class="srow"><span class="rlbl">${l.n}</span><span class="rval sm">${l.v}</span></div>`).join('')
+}
+
+// WA
+function buildMsg(rqA,nqA,eqA,cliente,fecha,nota,envio){
+  let sub=0;const lines=[]
+  ROLLS.forEach((it,i)=>{if(rqA[i]>0){lines.push('- '+rqA[i]+'x '+it.n+' - '+money(it.v*rqA[i]));sub+=it.v*rqA[i]}})
+  NIGIRIS.forEach((it,i)=>{if(nqA[i]>0){lines.push('- '+nqA[i]+'x '+it.n+' - '+money(it.v*nqA[i]));sub+=it.v*nqA[i]}})
+  if(eqA)EXTRAS.forEach((it,i)=>{if(eqA[i]>0){lines.push('- '+eqA[i]+'x '+it.n+' - '+money(it.v*eqA[i]));sub+=it.v*eqA[i]}})
+  let msg='Sushi - '+fecha+'\nCliente: '+cliente+'\n-----------------\n'
+  msg+=lines.join('\n')+'\n-----------------\n'
+  if(envio>0)msg+='Subtotal: '+money(sub)+'\nEnvio: '+money(envio)+'\n'
+  msg+='*TOTAL: '+money(sub+envio)+'*'
+  if(nota)msg+='\nNota: '+nota
+  return msg
+}
+
+function enviarWA(rqA,nqA,eqA,oCliente,oFecha,oNota,oEnvio,oTel){
+  const cliente=oCliente||$('f-cliente').value.trim()||'Cliente'
+  const fecha=oFecha||$('f-fecha').value.trim()||today()
+  const nota=oNota||$('f-nota').value.trim()
+  const envio=oEnvio!==undefined?oEnvio:(parseInt($('s-envio').value)||0)
+  const tel=(oTel||$('f-tel').value.trim()).replace(/\D/g,'')
+  if(!rqA.some(q=>q>0)&&!nqA.some(q=>q>0)&&!(eqA&&eqA.some(q=>q>0))){showToast('Sin productos');return}
+  const msg=buildMsg(rqA,nqA,eqA,cliente,fecha,nota,envio)
+  const enc=encodeURIComponent(msg)
+  if(tel)window.open(`https://wa.me/549${tel}?text=${enc}`,'_blank')
+  else navigator.clipboard.writeText(msg).then(()=>showToast('Copiado — pegalo en WhatsApp')).catch(()=>window.open(`https://wa.me/?text=${enc}`,'_blank'))
+}
+
+// Tracking WA — mensaje "está saliendo"
+function enviarTracking(id){
+  const o=getOrdenes().find(o=>o.id===id)
+  if(!o)return
+  const tel=o.tel.replace(/\D/g,'')
+  const items=[
+    ...ROLLS.map((r,i)=>o.rq[i]>0?`${o.rq[i]}× ${r.n}`:'').filter(Boolean),
+    ...NIGIRIS.map((n,i)=>o.nq[i]>0?`${o.nq[i]}× ${n.n}`:'').filter(Boolean),
+  ].join(', ')
+
+  const addrParaMsg=o.addrDisplay||o.addr
+  let msg='*Tu pedido esta en camino!*\n\n'
+  msg+='Hola '+o.cliente+'! Tu sushi ya esta listo y saliendo ahora.\n\n'
+  msg+=items+'\n'
+  msg+='Total: *'+money(o.total)+'*'
+  if(addrParaMsg)msg+='\nDireccion: '+addrParaMsg
+  msg+='\n\nGracias por tu pedido!'
+
+  const enc=encodeURIComponent(msg)
+  if(tel)window.open(`https://wa.me/549${tel}?text=${enc}`,'_blank')
+  else navigator.clipboard.writeText(msg).then(()=>showToast('Mensaje de tracking copiado')).catch(()=>window.open(`https://wa.me/?text=${enc}`,'_blank'))
+}
+
+// Guardar
+function guardar(){
+  if(!rq.some(q=>q>0)&&!nq.some(q=>q>0)&&!eq.some(q=>q>0)){showToast('Agregá productos primero');return}
+  if(!$('f-cliente').value.trim()){showToast('Ingresá el nombre del cliente');return}
+  let sub=0
+  ROLLS.forEach((it,i)=>sub+=it.v*rq[i])
+  NIGIRIS.forEach((it,i)=>sub+=it.v*nq[i])
+  const envio=parseInt($('s-envio').value)||0
+  const now=new Date()
+  const hora=(window._parsedHora) || (now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'))
+  window._parsedHora = null
+  window._parsedPago = null
+  const dpto=$('f-dpto').value.trim()
+  const numero=$('f-numero')?$('f-numero').value.trim():''
+  const localidad=$('f-localidad')?$('f-localidad').value.trim():''
+  const calleBase=$('f-addr').value.trim()
+  const addrBase = dirConfirmadaOrden ? dirConfirmadaOrden.addr : [calleBase, numero, localidad].filter(Boolean).join(' ')
+  const addrDisplay = dirConfirmadaOrden ? dirConfirmadaOrden.addrDisplay : [calleBase, numero, dpto, localidad].filter(Boolean).join(', ')
+  const orden={
+    id:Date.now(),
+    cliente:$('f-cliente').value.trim()||'Sin nombre',
+    fecha:$('f-fecha').value.trim()||today(),
+    hora:hora,
+    tel:$('f-tel').value.trim(),
+    nota:$('f-nota').value.trim(),
+    pago: window._parsedPago || formPago || '',
+    addr:addrBase,
+    dpto:dpto,
+    addrDisplay:addrDisplay,
+    rq:[...rq],nq:[...nq],eq:[...eq],
+    envio,total:sub+envio,listo:false,
+  }
+  const ords=getOrdenes();ords.push(orden);saveOrdenes(ords)
+  // Guardar también en historial permanente de estadísticas
+  const hist=JSON.parse(localStorage.getItem('sushi_hist_stats')||'[]')
+  hist.push({...orden})
+  localStorage.setItem('sushi_hist_stats',JSON.stringify(hist))
+  updateTabCount();resetOrden()
+  parsedOrden=null  // limpiar parser
+  showToast('Orden guardada ✓')
+  // Enviar WA de confirmación al cliente
+  enviarConfirmacion(orden)
+  document.querySelectorAll('.tab')[1].click()
+}
+
+function enviarConfirmacion(o){
+  const tel=o.tel.replace(/\D/g,'')
+  if(!tel)return
+  const lines=[]
+  let sub=0
+  ROLLS.forEach((it,i)=>{if(o.rq[i]>0){lines.push('- '+o.rq[i]+'x '+it.n+' - '+money(it.v*o.rq[i]));sub+=it.v*o.rq[i]}})
+  NIGIRIS.forEach((it,i)=>{if(o.nq[i]>0){lines.push('- '+o.nq[i]+'x '+it.n+' - '+money(it.v*o.nq[i]));sub+=it.v*o.nq[i]}})
+  if(o.eq)EXTRAS.forEach((it,i)=>{if(o.eq[i]>0){lines.push('- '+o.eq[i]+'x '+it.n+' - '+money(it.v*o.eq[i]));sub+=it.v*o.eq[i]}})
+  const totalConEnvio=o.total
+  const totalEfectivo=Math.round(totalConEnvio*0.9)
+
+  let msg='Hola '+o.cliente+'! Ya tomamos tu pedido. Te avisaremos cuando este listo y salga hacia tu domicilio.\n\n'
+  msg+=lines.join('\n')+'\n'
+  if(o.envio>0)msg+='\nSubtotal: '+money(sub)+'\nEnvio: '+money(o.envio)
+  msg+='\n*TOTAL: '+money(totalConEnvio)+'*'
+  if(o.nota)msg+='\n\nNota: '+o.nota
+  window.open('https://wa.me/549'+tel+'?text='+encodeURIComponent(msg),'_blank')
+}
+
+// Storage
+function getOrdenes(){return JSON.parse(localStorage.getItem('sushi_ordenes')||'[]')}
+function saveOrdenes(arr){localStorage.setItem('sushi_ordenes',JSON.stringify(arr))}
+function updateTabCount(){
+  const n=getOrdenes().filter(o=>!o.listo).length
+  $('tab-cnt').textContent=n?`(${n})`:''
+}
+
+// Toggle listo
+function toggleListo(id){
+  const ords=getOrdenes(),o=ords.find(o=>o.id===id)
+  if(!o)return
+  o.listo=!o.listo
+  saveOrdenes(ords);updateTabCount();renderOrdenes();renderAcumulado()
+  showToast(o.listo?'Marcado como listo ✓':'Vuelto a pendiente')
+}
+
+// Render órdenes
+function renderOrdenes(){
+  const ords=getOrdenes()
+  const pendientes=ords.filter(o=>!o.listo),listos=ords.filter(o=>o.listo)
+  const totalJornada=ords.reduce((a,o)=>a+o.total,0)
+  $('ord-subtitulo').textContent=ords.length
+    ?`${pendientes.length} pendiente${pendientes.length!==1?'s':''} · ${listos.length} listo${listos.length!==1?'s':''} · ${money(totalJornada)}`:''
+
+  if(!ords.length){$('ord-list').innerHTML='<div class="empty-hist">No hay órdenes todavía</div>';return}
+  const sorted=[...pendientes,...listos]
+  $('ord-list').innerHTML=sorted.map(o=>{
+    const num=ords.indexOf(o)+1
+    const items=[
+      ...ROLLS.map((r,i)=>o.rq[i]>0?`${o.rq[i]}× ${r.n}`:'').filter(Boolean),
+      ...NIGIRIS.map((n,i)=>o.nq[i]>0?`${o.nq[i]}× ${n.n}`:'').filter(Boolean),
+      ...(o.eq||[]).map((q,i)=>q>0?`${q}× ${EXTRAS[i].n}`:'').filter(Boolean),
+    ].join(' · ')
+    const addrHTML=o.addr?`<div class="ord-addr" onclick="abrirMaps('${o.addr.replace(/'/g,"\\'")}')">📍 ${o.addr} <span style="color:var(--muted);font-size:.65rem">→ Maps</span></div>`:''
+    const esMP=o.pago&&(o.pago.toLowerCase().includes('mercado')||o.pago.toLowerCase().includes('mp'))
+    const pagado=o.pagado||false
+    const pagoHTML=o.pago?`<span style="font-family:var(--mono);font-size:.6rem;padding:.1rem .4rem;border-radius:3px;${
+      esMP
+        ? pagado ? 'background:#003d1a;color:#6fcf97' : 'background:#003d5c;color:#009ee3'
+        : 'background:#0a1f0a;color:#6fcf97'
+    }">${
+      esMP ? (pagado ? '✓ Pagado' : 'MP · Pendiente') : 'Efectivo'
+    }</span>`:''
+    const pagoBtn=esMP
+      ? pagado
+        ? `<button class="ord-btn" onclick="togglePago(${o.id})" style="color:var(--muted)">↩ Desmarcar pago</button>`
+        : `<button class="ord-btn" onclick="togglePago(${o.id})" style="border-color:#009ee3;color:#009ee3">✓ Confirmar pago MP</button>`
+      : ''
+    const listoBtn=o.listo
+      ?`<button class="ord-btn" onclick="toggleListo(${o.id})">↩ Pendiente</button>`
+      :`<button class="ord-btn g" onclick="toggleListo(${o.id})">✓ Listo</button>`
+    const trackBtn=o.tel||true
+      ?`<button class="ord-btn wa-track" onclick="enviarTracking(${o.id})">🛵 Está saliendo</button>`:''
+    return `
+      <div class="ord-item${o.listo?' listo':''}">
+        <div class="ord-header">
+          <div>
+            <span class="ord-num${o.listo?' listo':''}">#${num}</span>
+            <span class="ord-cliente">${o.cliente}</span>
+            <span class="ord-fecha"> · ${o.fecha}${o.hora?' · '+o.hora:''}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.4rem">
+            ${pagoHTML}
+            <span class="ord-total">${money(o.total)}</span>
+          </div>
+        </div>
+        <div class="ord-detalle">${items}${o.nota?` · 📝 ${o.nota}`:''}</div>
+        ${addrHTML}
+        <div class="ord-actions">
+          ${listoBtn}
+          ${trackBtn}
+          ${pagoBtn}
+          <button class="ord-btn" onclick="reenviar(${o.id})">↗ WA</button>
+          <button class="ord-btn del" onclick="borrar(${o.id})">Eliminar</button>
+        </div>
+      </div>`
+  }).join('')
+}
+
+function togglePago(id){
+  const ords=getOrdenes(),o=ords.find(o=>o.id===id)
+  if(!o)return
+  o.pagado=!o.pagado
+  saveOrdenes(ords);renderOrdenes()
+  showToast(o.pagado?'Pago MP confirmado ✓':'Pago desmarcado')
+}
+
+function borrar(id){saveOrdenes(getOrdenes().filter(o=>o.id!==id));updateTabCount();renderOrdenes();renderAcumulado();if(document.getElementById("tab-ruta").classList.contains("on"))renderRuta()}
+function confirmarBorrarTodo(){
+  if(!getOrdenes().length)return
+  if(confirm('¿Limpiar todas las órdenes?')){saveOrdenes([]);limpiarContadores();updateTabCount();renderOrdenes();renderAcumulado();showToast('Jornada limpiada')}
+}
+function reenviar(id){
+  const o=getOrdenes().find(o=>o.id===id)
+  if(o)enviarWA(o.rq,o.nq,o.eq||[],o.cliente,o.fecha,o.nota,o.envio,o.tel)
+}
+
+// Acumulado
+function renderAcumulado(){
+  const ords=getOrdenes(),pendientes=ords.filter(o=>!o.listo),el=$('acu-wrap')
+  if(!ords.length){el.innerHTML='<div class="empty-hist">Guardá órdenes para ver el acumulado</div>';return}
+  if(!pendientes.length){el.innerHTML='<div class="empty-hist" style="color:var(--green)">✓ Todas las órdenes están listas</div>';return}
+  const pRq=new Array(ROLLS.length).fill(0),pNq=new Array(NIGIRIS.length).fill(0)
+  pendientes.forEach(o=>{o.rq.forEach((q,i)=>pRq[i]+=q);o.nq.forEach((q,i)=>pNq[i]+=q)})
+  let html=`<div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem">${pendientes.length} orden${pendientes.length>1?'es':''} pendiente${pendientes.length>1?'s':''}</div>`
+  if(pRq.some(q=>q>0)){
+    html+=`<table class="acu-table"><thead><tr><th>Roll</th><th style="text-align:right">Total</th><th style="text-align:center;width:72px">Hecho</th><th style="text-align:right;width:64px">Falta</th></tr></thead><tbody>`
+    ROLLS.forEach((r,i)=>{
+      if(!pRq[i])return
+      const key='acu_r_'+i
+      html+=`<tr>
+        <td>${r.n}</td>
+        <td><span class="acu-qty">${pRq[i]}</span></td>
+        <td style="text-align:center">
+          <input type="number" min="0" max="${pRq[i]}" value="${parseInt(localStorage.getItem(key))||0}"
+            style="width:52px;background:var(--surface2);border:.5px solid var(--border2);border-radius:4px;padding:.2rem .35rem;color:var(--accent);font-family:var(--mono);font-size:.78rem;text-align:center;outline:none"
+            oninput="setHecho('${key}',this.value,${pRq[i]},'falta_r_${i}')">
+        </td>
+        <td style="text-align:right"><span id="falta_r_${i}" style="font-family:var(--mono);font-size:.8rem;color:${parseInt(localStorage.getItem(key))||0>=pRq[i]?'var(--green)':'var(--red)'}">${pRq[i]-(parseInt(localStorage.getItem(key))||0)}</span></td>
+      </tr>`
+    })
+    html+=`</tbody></table>`
+  }
+  if(pNq.some(q=>q>0)){
+    html+=`<div style="height:.75rem"></div><table class="acu-table"><thead><tr><th>Nigiri</th><th style="text-align:right">Total</th><th style="text-align:center;width:72px">Hecho</th><th style="text-align:right;width:64px">Falta</th></tr></thead><tbody>`
+    NIGIRIS.forEach((n,i)=>{
+      if(!pNq[i])return
+      const key='acu_n_'+i
+      html+=`<tr>
+        <td>${n.n}</td>
+        <td><span class="acu-qty">${pNq[i]}</span></td>
+        <td style="text-align:center">
+          <input type="number" min="0" max="${pNq[i]}" value="${parseInt(localStorage.getItem(key))||0}"
+            style="width:52px;background:var(--surface2);border:.5px solid var(--border2);border-radius:4px;padding:.2rem .35rem;color:var(--accent);font-family:var(--mono);font-size:.78rem;text-align:center;outline:none"
+            oninput="setHecho('${key}',this.value,${pNq[i]},'falta_n_${i}')">
+        </td>
+        <td style="text-align:right"><span id="falta_n_${i}" style="font-family:var(--mono);font-size:.8rem;color:${parseInt(localStorage.getItem(key))||0>=pNq[i]?'var(--green)':'var(--red)'}">${pNq[i]-(parseInt(localStorage.getItem(key))||0)}</span></td>
+      </tr>`
+    })
+    html+=`</tbody></table>`
+  }
+  let tIng=0,tEnv=0
+  ords.forEach(o=>{tIng+=o.total;tEnv+=o.envio||0})
+  html+=`<div class="jornada-total">
+    <div class="jt-row"><span class="jt-lbl">Total jornada</span><span class="jt-val big">${money(tIng)}</span></div>
+    <div class="jt-row"><span class="jt-lbl">Órdenes totales</span><span class="jt-val">${ords.length}</span></div>
+    <div class="jt-row"><span class="jt-lbl">Listas</span><span class="jt-val" style="color:var(--green)">${ords.filter(o=>o.listo).length}</span></div>
+    <div class="jt-row"><span class="jt-lbl">Pendientes</span><span class="jt-val" style="color:var(--accent)">${pendientes.length}</span></div>
+    ${ords.length>0?`<div class="jt-row"><span class="jt-lbl">Ticket promedio</span><span class="jt-val">${money(tIng/ords.length)}</span></div>`:''}
+  </div>
+  <button class="btn ghost" style="width:100%;margin-top:.75rem" onclick="copiarAcumulado()">Copiar lista de producción</button>`
+  el.innerHTML=html
+}
+
+function copiarAcumulado(){
+  const pendientes=getOrdenes().filter(o=>!o.listo)
+  if(!pendientes.length){showToast('No hay pendientes');return}
+  const pRq=new Array(ROLLS.length).fill(0),pNq=new Array(NIGIRIS.length).fill(0)
+  pendientes.forEach(o=>{o.rq.forEach((q,i)=>pRq[i]+=q);o.nq.forEach((q,i)=>pNq[i]+=q)})
+  let txt=`📋 PRODUCCIÓN · ${today()}\n${pendientes.length} órdenes pendientes\n─────────────────\n`
+  const rolls=ROLLS.map((r,i)=>pRq[i]>0?`${pRq[i]}× ${r.n}`:'').filter(Boolean)
+  const nigs=NIGIRIS.map((n,i)=>pNq[i]>0?`${pNq[i]}× ${n.n}`:'').filter(Boolean)
+  if(rolls.length)txt+=`ROLLS:\n${rolls.map(l=>`  ${l}`).join('\n')}\n`
+  if(nigs.length)txt+=`NIGIRIS:\n${nigs.map(l=>`  ${l}`).join('\n')}\n`
+  navigator.clipboard.writeText(txt).then(()=>showToast('Lista copiada ✓')).catch(()=>showToast('No se pudo copiar'))
+}
+
+// ── ESTADÍSTICAS ──────────────────────────────────────────────────
+function getHistStats(){return JSON.parse(localStorage.getItem('sushi_hist_stats')||'[]')}
+function renderStats(){
+  const ords=getHistStats()  // historial permanente
+  const el=$('stats-wrap')
+  if(!ords.length){el.innerHTML='<div class="empty-hist">Guardá órdenes para ver estadísticas<br><span style="font-size:.7rem;color:var(--muted)">El historial se acumula y no se borra al limpiar la jornada</span></div>';return}
+
+  const total=ords.reduce((a,o)=>a+o.total,0)
+  const totalEnvios=ords.reduce((a,o)=>a+(o.envio||0),0)
+  const ticket=total/ords.length
+  const listos=ords.length  // en stats todas son completadas
+
+  // Ranking productos
+  const rankRolls=ROLLS.map((r,i)=>({n:r.n,p:r.p,cnt:ords.reduce((a,o)=>a+o.rq[i],0)})).filter(x=>x.cnt>0).sort((a,b)=>b.cnt-a.cnt)
+  const rankNigiris=NIGIRIS.map((n,i)=>({n:n.n,p:n.p,cnt:ords.reduce((a,o)=>a+o.nq[i],0)})).filter(x=>x.cnt>0).sort((a,b)=>b.cnt-a.cnt)
+  const maxR=rankRolls[0]?.cnt||1,maxN=rankNigiris[0]?.cnt||1
+
+  // Proteínas
+  const protMap={}
+  ords.forEach(o=>{
+    ROLLS.forEach((r,i)=>{if(o.rq[i]>0){protMap[r.p]=(protMap[r.p]||0)+o.rq[i]}})
+    NIGIRIS.forEach((n,i)=>{if(o.nq[i]>0){protMap[n.p]=(protMap[n.p]||0)+o.nq[i]}})
+  })
+  const protRank=Object.entries(protMap).sort((a,b)=>b[1]-a[1])
+  const maxProt=protRank[0]?.[1]||1
+
+  let html=`
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">Total jornada</div><div class="stat-val">${money(total)}</div></div>
+    <div class="stat-card"><div class="stat-label">Ticket promedio</div><div class="stat-val sm">${money(ticket)}</div></div>
+    <div class="stat-card"><div class="stat-label">Órdenes</div><div class="stat-val green">${ords.length}</div><div class="stat-sub">${listos} listas · ${ords.length-listos} pendientes</div></div>
+    <div class="stat-card"><div class="stat-label">Envíos</div><div class="stat-val sm">${money(totalEnvios)}</div><div class="stat-sub">${ords.filter(o=>o.envio>0).length} con envío</div></div>
+  </div>`
+
+  if(rankRolls.length){
+    html+=`<div class="slabel" style="margin-top:1.5rem">Rolls más pedidos</div>
+    <div style="background:var(--surface);border:.5px solid var(--border2);border-radius:7px;overflow:hidden">`
+    rankRolls.forEach(r=>{
+      html+=`<div class="rank-row">
+        <span class="rank-name"><span class="tag ${TAG[r.p]||'t-pes'}" style="margin-right:.4rem"></span>${r.n}</span>
+        <div class="rank-right">
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(r.cnt/maxR*100)}%"></div></div>
+          <span class="rank-cnt">${r.cnt}×</span>
+        </div>
+      </div>`
+    })
+    html+=`</div>`
+  }
+
+  if(rankNigiris.length){
+    html+=`<div class="slabel" style="margin-top:1.25rem">Nigiris más pedidos</div>
+    <div style="background:var(--surface);border:.5px solid var(--border2);border-radius:7px;overflow:hidden">`
+    rankNigiris.forEach(n=>{
+      html+=`<div class="rank-row">
+        <span class="rank-name"><span class="tag ${TAG[n.p]||'t-pes'}" style="margin-right:.4rem"></span>${n.n}</span>
+        <div class="rank-right">
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(n.cnt/maxN*100)}%"></div></div>
+          <span class="rank-cnt">${n.cnt}×</span>
+        </div>
+      </div>`
+    })
+    html+=`</div>`
+  }
+
+  if(protRank.length){
+    html+=`<div class="slabel" style="margin-top:1.25rem">Proteínas más pedidas</div>
+    <div style="background:var(--surface);border:.5px solid var(--border2);border-radius:7px;overflow:hidden">`
+    protRank.forEach(([prot,cnt])=>{
+      html+=`<div class="rank-row">
+        <span class="rank-name"><span class="tag ${TAG[prot]||'t-pes'}" style="margin-right:.4rem"></span>${prot}</span>
+        <div class="rank-right">
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(cnt/maxProt*100)}%"></div></div>
+          <span class="rank-cnt">${cnt}×</span>
+        </div>
+      </div>`
+    })
+    html+=`</div>`
+  }
+
+  html+=`<button class="btn ghost" style="width:100%;margin-top:1rem;font-size:.6rem" onclick="if(confirm('¿Borrar todo el historial de estadísticas?')){localStorage.removeItem('sushi_hist_stats');renderStats()}">Limpiar historial estadísticas</button>`
+  el.innerHTML=html
+}
+
+// ── RUTA DEL DÍA ─────────────────────────────────────────────────
+// Coordenadas aproximadas de referencia por barrio para ordenar rutas
+// Usamos distancia de string como proxy — en realidad hacemos nearest neighbor
+// por orden de carga si no hay geocoding. Pero sí separamos addr de dpto para Maps.
+
+function addrParaMaps(o){
+  // Solo calle + número + localidad, sin dpto
+  return o.addr||''
+}
+
+function optimizarRuta(paradas){
+  // Nearest neighbor simple usando distancia lexicográfica de la dirección
+  // (aproxima calles cercanas por nombre). Funciona bien en zona San Isidro.
+  if(paradas.length<=2)return paradas
+  const result=[paradas[0]]
+  const resto=[...paradas.slice(1)]
+  while(resto.length){
+    const last=result[result.length-1]
+    // Encontrar el más cercano al último punto (por similitud de dirección)
+    // En ausencia de geocoding usamos el número de calle como proxy
+    const getNum=o=>{const m=(o.addr||'').match(/\d+/);return m?parseInt(m[0]):9999}
+    const lastNum=getNum(last)
+    let minDist=Infinity,minIdx=0
+    resto.forEach((o,i)=>{
+      const dist=Math.abs(getNum(o)-lastNum)
+      if(dist<minDist){minDist=dist;minIdx=i}
+    })
+    result.push(resto[minIdx])
+    resto.splice(minIdx,1)
+  }
+  return result
+}
+
+function renderRuta(){
+  const ords=getOrdenes()
+  const el=$('ruta-wrap')
+  const conAddr=ords.filter(o=>o.addr&&o.addr.trim())
+
+  if(!conAddr.length){
+    el.innerHTML='<div class="ruta-empty">Ninguna orden tiene dirección cargada.<br>Agregá la dirección al guardar los pedidos.</div>'
+    return
+  }
+
+  const pendientes=conAddr.filter(o=>!o.listo)
+  const listos=conAddr.filter(o=>o.listo)
+
+  // Optimizar solo pendientes
+  const pendOptimizados=optimizarRuta([...pendientes])
+  const ordenados=[...pendOptimizados,...listos]
+
+  // URL Maps con addr limpia (sin dpto)
+  const stops=pendOptimizados.map(o=>encodeURIComponent(addrParaMaps(o)+', San Isidro, Buenos Aires'))
+  const origen=encodeURIComponent(MI_DIR)
+  let mapsUrl
+  if(stops.length===0){
+    mapsUrl=''
+  } else if(stops.length===1){
+    mapsUrl=`https://www.google.com/maps/dir/?api=1&origin=${origen}&destination=${stops[0]}&travelmode=driving`
+  } else {
+    const dest=stops[stops.length-1]
+    const waypoints=stops.slice(0,-1).join('|')
+    mapsUrl=`https://www.google.com/maps/dir/?api=1&origin=${origen}&destination=${dest}&waypoints=${waypoints}&optimize:true&travelmode=driving`
+  }
+
+  let html=`
+    <div style="margin-bottom:1rem">
+      ${mapsUrl?`<button class="btn-maps-ruta" onclick="window.open('${mapsUrl}','_blank')">
+        Abrir ruta optimizada en Maps (${pendOptimizados.length} parada${pendOptimizados.length!==1?'s':''})
+      </button>`:'<div style="font-size:.8rem;color:var(--green);text-align:center;padding:.75rem">Todas las entregas realizadas</div>'}
+      ${pendOptimizados.length>1?`<div style="font-size:.7rem;color:var(--muted);margin-top:.4rem;text-align:center">Ruta ordenada por cercanía</div>`:''}
+      ${listos.length>0?`<div style="font-size:.7rem;color:var(--muted);margin-top:.25rem;text-align:center">${listos.length} ya entregado${listos.length!==1?'s':''}</div>`:''}
+    </div>
+    <div class="ruta-card">
+      <div class="ruta-origen">
+        <div class="ruta-dot home"></div>
+        <div>
+          <div style="font-size:.82rem;font-weight:500">Francia 353, San Isidro</div>
+          <div style="font-size:.7rem;color:var(--muted)">Punto de salida</div>
+        </div>
+      </div>`
+
+  ordenados.forEach((o,idx)=>{
+    const isDone=o.listo
+    const num=idx+1
+    const items=[
+      ...ROLLS.map((r,i)=>o.rq[i]>0?`${o.rq[i]}x ${r.n}`:'').filter(Boolean),
+      ...NIGIRIS.map((n,i)=>o.nq[i]>0?`${o.nq[i]}x ${n.n}`:'').filter(Boolean),
+      ...(o.eq||[]).map((q,i)=>q>0?`${q}x ${EXTRAS[i].n}`:'').filter(Boolean),
+    ].join(', ')
+    // Maps usa solo addr base
+    const mapsInd=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(MI_DIR)}&destination=${encodeURIComponent(addrParaMaps(o)+', San Isidro, Buenos Aires')}&travelmode=driving`
+
+    html+=`
+      <div style="display:flex;align-items:stretch">
+        <div style="display:flex;flex-direction:column;align-items:center;padding:.65rem 0 .65rem 1rem;flex-shrink:0">
+          <div class="ruta-line"></div>
+          <div class="ruta-dot ${isDone?'done':'stop'}" style="margin:.1rem 0"></div>
+          ${idx<ordenados.length-1?'<div class="ruta-line"></div>':''}
+        </div>
+        <div class="ruta-stop${isDone?' done':''}" style="flex:1;border-bottom:${idx<ordenados.length-1?'.5px solid var(--border)':'none'}">
+          <div class="ruta-stop-info">
+            <div class="ruta-stop-cliente">
+              ${isDone?'✓ ':''}<span class="ruta-num">#${num} </span>${o.cliente}
+              <span style="font-family:var(--mono);font-size:.75rem;color:var(--accent);margin-left:.4rem">${money(o.total)}</span>
+            </div>
+            <div class="ruta-stop-addr">📍 ${o.addrDisplay||o.addr}${o.dpto&&!o.addrDisplay?' ('+o.dpto+')':''}</div>
+            <div class="ruta-stop-items">${items}${o.nota?' · '+o.nota:''}</div>
+          </div>
+          <div class="ruta-stop-actions">
+            <button class="btn-maps-ind" onclick="window.open('${mapsInd}','_blank')">Maps →</button>
+            ${!isDone?`<button class="ord-btn wa-track" style="font-size:.58rem;padding:.22rem .45rem" onclick="enviarTracking(${o.id})">Saliendo</button>`:''}
+          </div>
+        </div>
+      </div>`
+  })
+
+  html+=`</div>`
+
+  const totalEntregas=conAddr.reduce((a,o)=>a+o.total,0)
+  html+=`
+    <div style="background:var(--surface);border:.5px solid var(--border2);border-radius:7px;padding:.75rem 1rem;margin-top:.5rem">
+      <div class="jt-row"><span class="jt-lbl">Paradas totales</span><span class="jt-val">${conAddr.length}</span></div>
+      <div class="jt-row"><span class="jt-lbl">Pendientes</span><span class="jt-val" style="color:var(--accent)">${pendientes.length}</span></div>
+      <div class="jt-row"><span class="jt-lbl">Entregados</span><span class="jt-val" style="color:var(--green)">${listos.length}</span></div>
+      <div class="jt-row"><span class="jt-lbl">Total en ruta</span><span class="jt-val big">${money(totalEntregas)}</span></div>
+    </div>`
+
+  el.innerHTML=html
+}
+
+// Reset
+function resetOrden(){
+  rq.fill(0);nq.fill(0);eq.fill(0)
+  $('f-cliente').value=$('f-fecha').value=$('f-tel').value=$('f-nota').value=$('f-addr').value=$('f-dpto').value=''
+  if($('f-numero'))$('f-numero').value=''
+  if($('f-localidad'))$('f-localidad').value=''
+  $('s-envio').value='0';$('map-btn').style.display='none'
+  formPago=''
+  const mp=$('fpago-mp'),ef=$('fpago-ef')
+  if(mp){mp.style.background='transparent';mp.style.color='var(--muted)';mp.style.borderColor='var(--border2)'}
+  if(ef){ef.style.background='transparent';ef.style.color='var(--muted)';ef.style.borderColor='var(--border2)'}
+  buildList(ROLLS,rq,'r','list-rolls')
+  buildList(NIGIRIS,nq,'n','list-nigiris')
+  buildList(EXTRAS,eq,'e','list-extras')
+  calcS()
+}
+
+// Función hecho/falta acumulado
+function setHecho(key,val,total,faltaId){
+  const hecho=Math.min(parseInt(val)||0,total)
+  localStorage.setItem(key,hecho)
+  const falta=total-hecho
+  const el=document.getElementById(faltaId)
+  if(el){el.textContent=falta;el.style.color=falta<=0?'var(--green)':'var(--red)'}
+}
+function limpiarContadores(){
+  for(let i=0;i<ROLLS.length;i++)localStorage.removeItem('acu_r_'+i)
+  for(let i=0;i<NIGIRIS.length;i++)localStorage.removeItem('acu_n_'+i)
+}
+
+let tT
+function showToast(msg){
+  const t=$('toast');t.textContent=msg;t.classList.add('show')
+  clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2500)
+}
+
+buildList(ROLLS,rq,'r','list-rolls')
+buildList(NIGIRIS,nq,'n','list-nigiris')
+buildList(EXTRAS,eq,'e','list-extras')
+calcS();updateTabCount()
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let mapOrd=null, markerOrd=null, geoTimerOrd=null
+
+function buscarDirOrden(){
+  dirConfirmadaOrden=null
+  clearTimeout(geoTimerOrd)
+  const calle=$('f-addr').value.trim()
+  const num=$('f-numero')?$('f-numero').value.trim():''
+  const loc=$('f-localidad').value.trim()||'San Isidro'
+  if(!calle) return
+  const q=[calle,num,loc,'Buenos Aires','Argentina'].filter(Boolean).join(' ')
+  geoTimerOrd=setTimeout(()=>geocodificarOrden(q), 700)
+}
+
+function geocodificarOrden(q){
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=ar`)
+    .then(r=>r.json())
+    .then(data=>{
+      if(!data.length){$('map-wrap-ord').style.display='none';return}
+      const lat=parseFloat(data[0].lat),lng=parseFloat(data[0].lon)
+      mostrarMapaOrden(lat,lng,data[0].display_name)
+    }).catch(()=>{})
+}
+
+function mostrarMapaOrden(lat,lng,displayName){
+  $('map-wrap-ord').style.display='block'
+  $('map-ord-confirm').style.display='block'
+  $('map-ord-label').textContent='📍 '+(displayName||'').split(',').slice(0,3).join(',')
+  if(!mapOrd){
+    mapOrd=L.map('map-ord',{zoomControl:true,attributionControl:false}).setView([lat,lng],16)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(mapOrd)
+    const icon=L.divIcon({className:'',html:'<div style="width:14px;height:14px;background:#c9a96e;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.5)"></div>',iconSize:[14,14],iconAnchor:[7,7]})
+    markerOrd=L.marker([lat,lng],{icon,draggable:true}).addTo(mapOrd)
+    markerOrd.on('dragend',()=>{
+      $('map-ord-label').textContent='📍 Posición ajustada manualmente'
+    })
+  } else {
+    mapOrd.setView([lat,lng],16)
+    markerOrd.setLatLng([lat,lng])
+  }
+  setTimeout(()=>mapOrd.invalidateSize(),100)
+}
+
+let dirConfirmadaOrden = null
+
+function confirmarUbicacionOrden(){
+  const calleBase=$('f-addr').value.trim()
+  const numero=$('f-numero')?$('f-numero').value.trim():''
+  const dpto=$('f-dpto').value.trim()
+  const localidad=$('f-localidad')?$('f-localidad').value.trim():''
+  dirConfirmadaOrden = {
+    addr: [calleBase, numero, localidad].filter(Boolean).join(' '),
+    addrDisplay: [calleBase, numero, dpto, localidad].filter(Boolean).join(', ')
+  }
+  $('map-ord-confirm').textContent='✓ Ubicación confirmada'
+  $('map-ord-confirm').style.background='var(--green)'
+  $('map-ord-confirm').style.color='#0d0d0d'
+  $('map-ord-confirm').disabled=true
+  $('map-ord-label').style.color='var(--green)'
+}
+
+// Limpiar mapa al resetear orden
+const _origReset=resetOrden
+window.resetOrdenConMapa=function(){
+  _origReset()
+  $('map-wrap-ord').style.display='none'
+  $('map-ord-confirm').textContent='✓ Confirmar ubicación'
+  $('map-ord-confirm').style.background='var(--accent)'
+  $('map-ord-confirm').style.color='#0d0d0d'
+  $('map-ord-confirm').disabled=false
+  if(mapOrd&&markerOrd)markerOrd.setLatLng([0,0])
+  dirConfirmadaOrden=null
+}
+</script>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const PASS = btoa('Racosushi1101') // ofuscado en base64
+
+function checkPwd(){
+  const val = document.getElementById('pwd-input').value
+  if(btoa(val) === PASS){
+    document.getElementById('login-wrap').classList.add('hidden')
+    document.getElementById('app-wrap').classList.add('visible')
+    sessionStorage.setItem('raco_auth', PASS)
+  } else {
+    document.getElementById('login-error').style.display = 'block'
+    document.getElementById('pwd-input').value = ''
+    document.getElementById('pwd-input').focus()
+  }
+}
+
+// Si ya estaba autenticado en esta sesión
+if(sessionStorage.getItem('raco_auth') === PASS){
+  document.getElementById('login-wrap').classList.add('hidden')
+  document.getElementById('app-wrap').classList.add('visible')
+}
+</script>
+</body>
+</html>
