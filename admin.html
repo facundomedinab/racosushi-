@@ -228,6 +228,50 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .seccion-btn:hover{color:var(--dim);border-color:var(--dim)}
 .seccion-btn.on{background:var(--accent);color:#0d0d0d;border-color:var(--accent);font-weight:500}
 
+/* ── COSTOS ── */
+.costos-filtros{display:flex;gap:.35rem;margin-bottom:1.25rem;flex-wrap:wrap}
+.cfiltro{background:transparent;border:.5px solid var(--border2);border-radius:4px;color:var(--muted);font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;padding:.3rem .65rem;cursor:pointer;transition:all .15s}
+.cfiltro.on{background:var(--surface2);color:var(--accent);border-color:var(--accent2)}
+.costo-card{background:var(--surface);border:.5px solid var(--border);border-radius:6px;margin-bottom:.5rem;overflow:hidden}
+.costo-header{display:flex;justify-content:space-between;align-items:center;padding:.65rem .85rem;cursor:pointer;transition:background .15s}
+.costo-header:hover{background:var(--surface2)}
+.costo-nombre{font-size:.85rem;font-weight:500}
+.costo-badges{display:flex;align-items:center;gap:.5rem;flex-shrink:0}
+.costo-margen{font-family:var(--mono);font-size:.72rem;color:var(--green)}
+.costo-precio{font-family:var(--mono);font-size:.72rem;color:var(--accent)}
+.costo-body{display:none;padding:.65rem .85rem;border-top:.5px solid var(--border)}
+.costo-body.open{display:block}
+.costo-row{display:flex;justify-content:space-between;align-items:center;padding:.25rem 0;border-bottom:.5px solid var(--border);font-size:.78rem}
+.costo-row:last-child{border-bottom:none}
+.costo-ing{color:var(--dim)}
+.costo-g{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin:0 .5rem}
+.costo-val{font-family:var(--mono);font-size:.75rem;color:var(--text2)}
+.costo-total-row{display:flex;justify-content:space-between;padding:.5rem 0 .1rem;margin-top:.25rem;border-top:.5px solid var(--border2)}
+.costo-total-lbl{font-size:.78rem;color:var(--dim)}
+.costo-total-val{font-family:var(--mono);font-size:.85rem;color:var(--accent)}
+
+/* ── INSUMOS ── */
+.ins-section{margin-bottom:1.5rem}
+.ins-section-title{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:.4rem 0;border-bottom:.5px solid var(--border);margin-bottom:.5rem}
+.ins-row{display:flex;align-items:center;gap:.5rem;padding:.45rem .65rem;background:var(--surface);border:.5px solid var(--border);border-radius:5px;margin-bottom:.3rem}
+.ins-nombre{flex:1;font-size:.82rem}
+.ins-proveedor{font-family:var(--mono);font-size:.58rem;color:var(--muted);white-space:nowrap}
+.ins-inp{background:var(--surface2);border:.5px solid var(--border2);border-radius:4px;padding:.25rem .45rem;color:var(--accent);font-family:var(--mono);font-size:.78rem;outline:none;width:90px;text-align:right;transition:border-color .15s}
+.ins-inp:focus{border-color:var(--accent2)}
+.ins-unit{font-family:var(--mono);font-size:.6rem;color:var(--muted);white-space:nowrap;min-width:28px}
+
+/* ── COMPRAS ── */
+.compra-section{background:var(--surface);border:.5px solid var(--border2);border-radius:7px;margin-bottom:1rem;overflow:hidden}
+.compra-proveedor{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);padding:.55rem .85rem;border-bottom:.5px solid var(--border);background:var(--surface2)}
+.compra-row{display:flex;justify-content:space-between;align-items:center;padding:.4rem .85rem;border-bottom:.5px solid var(--border);font-size:.8rem}
+.compra-row:last-child{border-bottom:none}
+.compra-ing{color:var(--text2)}
+.compra-detalle{display:flex;align-items:center;gap:.75rem;flex-shrink:0}
+.compra-g{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.compra-costo{font-family:var(--mono);font-size:.75rem;color:var(--accent)}
+.compra-total{display:flex;justify-content:space-between;padding:.55rem .85rem;background:rgba(201,169,110,.06);font-size:.8rem}
+.compra-total span:last-child{font-family:var(--mono);font-size:.82rem;color:var(--accent);font-weight:500}
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 </style>
@@ -406,17 +450,36 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 
   <!-- COSTOS -->
   <div id="tab-costos" class="panel">
-    <div id="costos-wrap"><div class="empty-hist">Próximamente — recetas y costos de cada producto</div></div>
+    <div id="costos-wrap">
+      <div class="costos-filtros">
+        <button class="cfiltro on" onclick="filtrarCostos('todos',this)">Todos</button>
+        <button class="cfiltro" onclick="filtrarCostos('rolls',this)">Rolls</button>
+        <button class="cfiltro" onclick="filtrarCostos('nigiris',this)">Nigiris</button>
+        <button class="cfiltro" onclick="filtrarCostos('salsas',this)">Salsas</button>
+      </div>
+      <div id="costos-lista"></div>
+    </div>
   </div>
 
   <!-- INSUMOS -->
   <div id="tab-insumos" class="panel">
-    <div id="insumos-wrap"><div class="empty-hist">Próximamente — precios de insumos por proveedor</div></div>
+    <div id="insumos-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
+        <span style="font-size:.78rem;color:var(--dim)">Editá los precios — los costos se recalculan solos</span>
+        <button class="btn ghost" style="padding:.3rem .65rem;font-size:.6rem" onclick="resetInsumos()">Resetear precios</button>
+      </div>
+      <div id="insumos-lista"></div>
+    </div>
   </div>
 
   <!-- ORDEN DE COMPRA -->
   <div id="tab-compras" class="panel">
-    <div id="compras-wrap"><div class="empty-hist">Próximamente — orden de compra basada en las órdenes del día</div></div>
+    <div id="compras-wrap">
+      <div style="font-size:.78rem;color:var(--dim);margin-bottom:1rem">
+        Basada en las órdenes pendientes de la jornada actual
+      </div>
+      <div id="compras-lista"></div>
+    </div>
   </div>
 
   <!-- ESTADÍSTICAS -->
@@ -569,6 +632,9 @@ function goTab(name,btn){
   if(name==='stats')renderStats()
   if(name==='ruta')renderRuta()
   if(name==='stock')renderStock()
+  if(name==='costos'){renderCostos()}
+  if(name==='insumos'){renderInsumos()}
+  if(name==='compras'){renderCompras()}
 }
 
 // Maps
@@ -1439,6 +1505,585 @@ let tT
 function showToast(msg){
   const t=$('toast');t.textContent=msg;t.classList.add('show')
   clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2500)
+}
+
+// ══════════════════════════════════════════════════════════════
+// COCINA — Datos del Excel
+// ══════════════════════════════════════════════════════════════
+
+// ── INSUMOS BASE (precios por g/ml, editables) ────────────────
+const INSUMOS_BASE = {
+  // Proteínas
+  salmon:      {n:'Salmón entero (merma 30%)',      pg:33.028571, prov:'Cheap Store',    unit:'kg'},
+  trucha:      {n:'Trucha entera (merma 35%)',       pg:27.846154, prov:'Cheap Store',    unit:'kg'},
+  langostino:  {n:'Langostino cola N°1 (merma 15%)',pg:18.2,      prov:'Cheap Store',    unit:'kg'},
+  pescablanca: {n:'Pesca blanca besugo (merma 35%)', pg:13.076923, prov:'Casa China',     unit:'kg'},
+  // Shari
+  arroz:       {n:'Arroz Kometo',                    pg:3.163333,  prov:'Cheap Store',    unit:'30kg'},
+  nori:        {n:'Nori (plancha)',                  pg:303.65,    prov:'Cheap Store',    unit:'100u', esHoja:true},
+  vinagre:     {n:'Vinagre de arroz Castelo',        pg:12.266667, prov:'Mercado local',  unit:'750ml'},
+  azucar:      {n:'Azúcar',                          pg:1.5,       prov:'Supermercado',   unit:'kg'},
+  mirin:       {n:'Mirin Hon Kakutsuru',             pg:27.777778, prov:'Casa China',     unit:'1800ml'},
+  sal:         {n:'Sal fina',                        pg:0.5,       prov:'Supermercado',   unit:'kg'},
+  // Frescos
+  qcrema:      {n:'Queso crema',                     pg:10.5,      prov:'Supermercado',   unit:'2kg'},
+  palta:       {n:'Palta',                           pg:11.0,      prov:'Verdulería',     unit:'kg'},
+  lima:        {n:'Lima / limón',                    pg:3.0,       prov:'Verdulería',     unit:'kg'},
+  maracuya:    {n:'Pulpa de maracuyá 400g',          pg:12.5,      prov:'Verdulería',     unit:'400g'},
+  cebollino:   {n:'Cebollino',                       pg:20.0,      prov:'Verdulería',     unit:'100g'},
+  negi:        {n:'Negi (cebolla de verdeo)',         pg:20.0,      prov:'Verdulería',     unit:'100g'},
+  quinoa:      {n:'Quinoa',                          pg:16.0,      prov:'Supermercado',   unit:'500g'},
+  krein_ing:   {n:'Krein (rábano picante)',           pg:15.0,      prov:'Supermercado',   unit:'200g'},
+  cebolla:     {n:'Cebolla morada',                  pg:2.0,       prov:'Verdulería',     unit:'kg'},
+  cilantro:    {n:'Cilantro fresco',                 pg:15.0,      prov:'Verdulería',     unit:'100g'},
+  // Condimentos
+  kewpie:      {n:'Kewpie 450g',                     pg:30.0,      prov:'MercadoLibre',   unit:'450g'},
+  sriracha:    {n:'Sriracha 250ml',                  pg:31.6,      prov:'Eco Despensa',   unit:'250ml'},
+  gochujang:   {n:'Gochujang 500g',                  pg:26.034,    prov:'Naccato',        unit:'500g'},
+  wasabi:      {n:'Wasabi pasta 43g',                pg:99.465116, prov:'Naccato',        unit:'43g'},
+  sesamo_ac:   {n:'Aceite sésamo Kadoya',            pg:78.899083, prov:'Casa China',     unit:'327ml'},
+  trufa_ac:    {n:'Aceite trufa negra',              pg:135.2,     prov:'Casa China',     unit:'250ml'},
+  aji_pasta:   {n:'Pasta ají amarillo 212g',         pg:35.377358, prov:'Barrio Chino',   unit:'212g'},
+  rocoto_pasta:{n:'Pasta rocoto 212g',               pg:35.377358, prov:'Barrio Chino',   unit:'212g'},
+  soja:        {n:'Salsa de soja Sillao 970ml',      pg:6.701031,  prov:'Casa China',     unit:'970ml'},
+  hondashi:    {n:'Hondashi (dashi polvo) 60g',      pg:200.0,     prov:'Casa China',     unit:'60g'},
+  miel:        {n:'Miel 500g',                       pg:10.0,      prov:'Supermercado',   unit:'500g'},
+  maicena:     {n:'Maicena 500g',                    pg:5.0,       prov:'Supermercado',   unit:'500g'},
+  ajo:         {n:'Ajo en pasta 200g',               pg:15.0,      prov:'Supermercado',   unit:'200g'},
+  // Crocantes
+  panko:       {n:'Panko Naccato 300g',              pg:13.833333, prov:'Naccato',        unit:'300g'},
+  maiz:        {n:'Maíz crocante',                   pg:10.0,      prov:'Supermercado',   unit:'500g'},
+  filo:        {n:'Masa filo',                       pg:12.0,      prov:'Coto',           unit:'500g'},
+  furikake:    {n:'Furikake frutos secos',           pg:40.0,      prov:'Casa China',     unit:'200g'},
+  tempura:     {n:'Migas de tempura (casero)',        pg:5.0,       prov:'Casero',         unit:'400g'},
+  cebfrita:    {n:'Cebolla frita',                   pg:20.0,      prov:'Supermercado',   unit:'200g'},
+  sesamo_n:    {n:'Sésamo negro',                    pg:8.0,       prov:'Casa China',     unit:'500g'},
+  sesamo_m:    {n:'Sésamo multicolor',               pg:8.0,       prov:'Casa China',     unit:'500g'},
+  ponzu:       {n:'Ponzu casero (estimado)',          pg:25.0,      prov:'Casero',         unit:'200ml'},
+  // Salsas bases
+  mani:        {n:'Maní 500g',                       pg:16.0,      prov:'Supermercado',   unit:'500g'},
+  almendras:   {n:'Almendras 500g',                  pg:30.0,      prov:'Supermercado',   unit:'500g'},
+  nueces:      {n:'Nueces 500g',                     pg:24.0,      prov:'Supermercado',   unit:'500g'},
+  azucar_r:    {n:'Azúcar rubia / morena',           pg:1.5,       prov:'Supermercado',   unit:'kg'},
+  pimienta:    {n:'Pimienta blanca 50g',             pg:40.0,      prov:'Supermercado',   unit:'50g'},
+  oliva:       {n:'Aceite de oliva 500ml',           pg:18.0,      prov:'Supermercado',   unit:'500ml'},
+  galleta:     {n:'Galleta de agua 150g',            pg:16.666667, prov:'Supermercado',   unit:'150g'},
+  qfresco:     {n:'Queso fresco 250g',               pg:18.0,      prov:'Supermercado',   unit:'250g'},
+  // Ikura
+  boken:       {n:'Boken Dip imitación ikura 92g',   pg:81.521739, prov:'Casa China',     unit:'92g'},
+}
+
+// Get precio/g considering localStorage overrides
+function getP(key){ 
+  const s = localStorage.getItem('raco_ins_'+key)
+  return s !== null ? parseFloat(s) : INSUMOS_BASE[key].pg 
+}
+
+// SHARI cost per roll (120g cocido)
+function shariCosto(){
+  const batchCosto = 1000*getP('arroz') + 250*getP('vinagre') + 70*getP('azucar') + 100*getP('mirin') + 40*getP('sal')
+  return batchCosto / 15 // 15 rolls per batch
+}
+
+// SALSAS — retorna costo por g
+function salsaCostoG(salsa){
+  const p = (k) => getP(k)
+  switch(salsa){
+    case 'aji':     return (65*p('kewpie')+30*p('aji_pasta')+3*p('lima')+1.5*p('soja')+0.5*p('sesamo_ac'))/100
+    case 'chalaqui':return (60*p('cebolla')+15*p('aji_pasta')+15*p('lima')+5*p('cilantro')+3*p('oliva')+2*p('pimienta'))/100
+    case 'rocoto':  return (55*p('kewpie')+35*p('rocoto_pasta')+1.5*p('ajo')+0.5*p('cebollino')+2*p('vinagre')+3*p('galleta')+3*p('qfresco'))/100
+    case 'marac':   return (30*p('maracuya')+20*p('azucar_r')+6*p('soja')+3*p('vinagre')+1*p('maicena'))/100
+    case 'kimchi':  return (70*p('kewpie')+20*p('gochujang')+5*p('soja')+2*p('sesamo_ac')+2*p('miel')+1*p('sriracha'))/100
+    case 'acevich': return (60*p('kewpie')+25*p('aji_pasta')+7*p('lima')+3*p('lima')+1*p('soja')+0.5*p('sesamo_ac')+0.5*p('hondashi'))/100
+    case 'spicy':   return (70*p('kewpie')+25*p('sriracha')+3*p('lima')+2*p('sesamo_ac'))/100
+    case 'furik':   return (50*p('mani')+15*p('almendras')+10*p('nueces')+15*p('sesamo_n')+10*p('panko'))/90
+    default: return 0
+  }
+}
+
+// ── RECETAS (gramos por ingrediente) ─────────────────────────
+const RECETAS_ROLLS = [
+  {n:'NY Phila',        pv:10000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'salmon',   g:80,  desc:'Salmón filet'},
+    {k:'qcrema',   g:40,  desc:'Queso crema'},
+    {k:'palta',    g:40,  desc:'Palta'},
+    {k:'sesamo_m', g:5,   desc:'Sésamo multicolor'},
+  ]},
+  {n:'Salmón · Palta',  pv:10000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'salmon',   g:80,  desc:'Salmón filet'},
+    {k:'palta',    g:50,  desc:'Palta'},
+    {k:'sesamo_n', g:5,   desc:'Sésamo negro'},
+  ]},
+  {n:'Ebi Furai',       pv:10000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'langostino',g:80, desc:'Langostino cola N°1'},
+    {k:'panko',    g:15,  desc:'Panko apanado'},
+    {k:'qcrema',   g:40,  desc:'Queso crema'},
+    {k:'palta',    g:40,  desc:'Palta'},
+  ]},
+  {n:'Maracuyá',        pv:13000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'trucha',   g:80,  desc:'Trucha filet'},
+    {k:'palta',    g:40,  desc:'Palta'},
+    {k:'salsa_marac',g:12,desc:'Salsa Maracuyá (12g)'},
+    {k:'filo',     g:15,  desc:'Masa filo (crocante)'},
+  ]},
+  {n:'Ají Roll',        pv:13000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'trucha',   g:80,  desc:'Trucha filet'},
+    {k:'palta',    g:40,  desc:'Palta'},
+    {k:'cebollino',g:5,   desc:'Cebollino'},
+    {k:'salsa_aji',g:10,  desc:'Salsa Ají Amarillo (10g)'},
+    {k:'cebfrita', g:10,  desc:'Cebolla frita'},
+  ]},
+  {n:'Spicy Trucha',    pv:13000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'trucha',   g:80,  desc:'Trucha filet'},
+    {k:'palta',    g:40,  desc:'Palta'},
+    {k:'negi',     g:5,   desc:'Negi'},
+    {k:'salsa_spicy',g:10,desc:'Salsa Spicy Mayo (10g)'},
+    {k:'panko',    g:12,  desc:'Panko'},
+  ]},
+  {n:'Krein',           pv:13000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'trucha',   g:80,  desc:'Trucha filet'},
+    {k:'palta',    g:40,  desc:'Palta'},
+    {k:'cebollino',g:15,  desc:'Cebollino'},
+    {k:'kewpie',   g:8,   desc:'Kewpie (aioli krein)'},
+    {k:'tempura',  g:15,  desc:'Migas tempura'},
+  ]},
+  {n:'Acevichado',      pv:13000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'pescablanca',g:80,desc:'Pesca blanca filet'},
+    {k:'palta',    g:40,  desc:'Palta'},
+    {k:'quinoa',   g:10,  desc:'Quinoa tostada'},
+    {k:'salsa_acevich',g:12,desc:'Salsa Acevichada (12g)'},
+    {k:'maiz',     g:12,  desc:'Maíz crocante'},
+  ]},
+  {n:'Shiro',           pv:13000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'pescablanca',g:80,desc:'Pesca blanca filet'},
+    {k:'palta',    g:50,  desc:'Crema de palta'},
+    {k:'wasabi',   g:3,   desc:'Wasabi pasta'},
+    {k:'ponzu',    g:8,   desc:'Ponzu casero'},
+    {k:'tempura',  g:15,  desc:'Migas tempura'},
+  ]},
+  {n:'Rocoto Lango',    pv:13000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'langostino',g:80, desc:'Langostino cola N°1'},
+    {k:'palta',    g:40,  desc:'Palta'},
+    {k:'negi',     g:5,   desc:'Negi'},
+    {k:'salsa_rocoto',g:10,desc:'Salsa Rocoto Mayo (10g)'},
+    {k:'panko',    g:12,  desc:'Panko'},
+  ]},
+  {n:'Kimchi Lango',    pv:13000, ingredientes:[
+    {k:'shari',    g:120, desc:'Shari (cocido)'},
+    {k:'nori',     g:1,   desc:'Nori',          hoja:true},
+    {k:'langostino',g:80, desc:'Langostino cola N°1'},
+    {k:'qcrema',   g:40,  desc:'Queso crema'},
+    {k:'negi',     g:5,   desc:'Negi'},
+    {k:'salsa_kimchi',g:10,desc:'Salsa Kimchi Mayo (10g)'},
+    {k:'furikake', g:8,   desc:'Furikake crocante'},
+  ]},
+]
+
+const RECETAS_NIGIRIS = [
+  {n:'Trucha Chalaquita',     pv:2500, ingredientes:[
+    {k:'shari_n',  g:15,  desc:'Shari (cocido)'},
+    {k:'trucha',   g:20,  desc:'Trucha filet'},
+    {k:'salsa_aji',g:5,   desc:'Salsa Ají Amarillo (5g)'},
+    {k:'salsa_chalaqui',g:8,desc:'Salsa Chalaquita (8g)'},
+  ]},
+  {n:'Trucha Flambeada',      pv:2500, ingredientes:[
+    {k:'shari_n',  g:15,  desc:'Shari (cocido)'},
+    {k:'trucha',   g:20,  desc:'Trucha filet'},
+    {k:'salsa_spicy',g:5, desc:'Salsa Spicy Mayo (5g)'},
+    {k:'negi',     g:2,   desc:'Negi'},
+  ]},
+  {n:'Trucha Filo Maracuyá',  pv:2500, ingredientes:[
+    {k:'shari_n',  g:15,  desc:'Shari (cocido)'},
+    {k:'trucha',   g:20,  desc:'Trucha filet'},
+    {k:'salsa_marac',g:8, desc:'Salsa Maracuyá (8g)'},
+    {k:'filo',     g:5,   desc:'Masa filo'},
+  ]},
+  {n:'Trucha Trufa Lima',     pv:2500, ingredientes:[
+    {k:'shari_n',  g:15,  desc:'Shari (cocido)'},
+    {k:'trucha',   g:20,  desc:'Trucha filet'},
+    {k:'trufa_ac', g:2,   desc:'Aceite trufa negra (2ml)'},
+    {k:'lima',     g:2,   desc:'Lima ralladura (2g)'},
+  ]},
+  {n:'Pesca Rocoto',          pv:2500, ingredientes:[
+    {k:'shari_n',  g:15,  desc:'Shari (cocido)'},
+    {k:'pescablanca',g:20,desc:'Pesca blanca filet'},
+    {k:'salsa_rocoto',g:5,desc:'Salsa Rocoto Mayo (5g)'},
+    {k:'negi',     g:2,   desc:'Negi'},
+  ]},
+  {n:'Pesca Kimchi',          pv:2500, ingredientes:[
+    {k:'shari_n',  g:15,  desc:'Shari (cocido)'},
+    {k:'pescablanca',g:20,desc:'Pesca blanca filet'},
+    {k:'salsa_kimchi',g:5,desc:'Salsa Kimchi Mayo (5g)'},
+    {k:'furikake', g:5,   desc:'Furikake frutos secos'},
+    {k:'negi',     g:2,   desc:'Negi'},
+  ]},
+  {n:'Pesca Acevichada',      pv:2500, ingredientes:[
+    {k:'shari_n',  g:15,  desc:'Shari (cocido)'},
+    {k:'pescablanca',g:20,desc:'Pesca blanca filet'},
+    {k:'salsa_acevich',g:6,desc:'Salsa Acevichada (6g)'},
+    {k:'maiz',     g:5,   desc:'Maíz crocante'},
+    {k:'negi',     g:2,   desc:'Negi'},
+  ]},
+  {n:'Langostino',            pv:2500, ingredientes:[
+    {k:'shari_n',  g:15,  desc:'Shari (cocido)'},
+    {k:'langostino',g:20, desc:'Langostino cola N°1'},
+    {k:'salsa_rocoto',g:5,desc:'Salsa Rocoto Mayo (5g)'},
+    {k:'negi',     g:2,   desc:'Negi'},
+  ]},
+  {n:'Ikura Boken Dip',       pv:2500, ingredientes:[
+    {k:'shari_n',  g:15,  desc:'Shari (cocido)'},
+    {k:'nori',     g:0.25,desc:'Nori (1/4 hoja)', hoja:true},
+    {k:'boken',    g:20,  desc:'Boken Dip imitación ikura'},
+  ]},
+]
+
+const RECETAS_SALSAS = [
+  {n:'Ají Amarillo Nikkei',  k:'aji',     batch:100, usoRoll:10, usoNig:5,  ingredientes:[
+    {k:'kewpie',65},{k:'aji_pasta',30},{k:'lima',3},{k:'soja',1.5},{k:'sesamo_ac',0.5}
+  ]},
+  {n:'Chalaquita Nikkei',    k:'chalaqui',batch:100, usoRoll:10, usoNig:8,  ingredientes:[
+    {k:'cebolla',60},{k:'aji_pasta',15},{k:'lima',15},{k:'cilantro',5},{k:'oliva',3},{k:'pimienta',2}
+  ]},
+  {n:'Rocoto Mayo',          k:'rocoto',  batch:100, usoRoll:10, usoNig:5,  ingredientes:[
+    {k:'kewpie',55},{k:'rocoto_pasta',35},{k:'ajo',1.5},{k:'cebollino',0.5},{k:'vinagre',2},{k:'galleta',3},{k:'qfresco',3}
+  ]},
+  {n:'Maracuyá Agridulce',   k:'marac',   batch:100, usoRoll:12, usoNig:8,  ingredientes:[
+    {k:'maracuya',30},{k:'azucar_r',20},{k:'soja',6},{k:'vinagre',3},{k:'maicena',1}
+  ]},
+  {n:'Kimchi Mayo',          k:'kimchi',  batch:100, usoRoll:10, usoNig:5,  ingredientes:[
+    {k:'kewpie',70},{k:'gochujang',20},{k:'soja',5},{k:'sesamo_ac',2},{k:'miel',2},{k:'sriracha',1}
+  ]},
+  {n:'Salsa Acevichada',     k:'acevich', batch:100, usoRoll:12, usoNig:6,  ingredientes:[
+    {k:'kewpie',60},{k:'aji_pasta',25},{k:'lima',7},{k:'lima',3},{k:'soja',1},{k:'sesamo_ac',0.5},{k:'hondashi',0.5}
+  ]},
+  {n:'Spicy Mayo Nikkei',    k:'spicy',   batch:100, usoRoll:10, usoNig:5,  ingredientes:[
+    {k:'kewpie',70},{k:'sriracha',25},{k:'lima',3},{k:'sesamo_ac',2}
+  ]},
+  {n:'Furikake Frutos Secos',k:'furik',   batch:90,  usoRoll:8,  usoNig:5,  ingredientes:[
+    {k:'mani',50},{k:'almendras',15},{k:'nueces',10},{k:'sesamo_n',15},{k:'panko',10}
+  ]},
+]
+
+// Costo de un ingrediente de receta
+function costoIng(k, g){
+  if(k === 'shari' || k === 'shari_n') return shariCosto() * (g / (k==='shari'?120:15)) * (k==='shari'?1:1)
+  if(k === 'shari')   return shariCosto()
+  if(k === 'shari_n') return shariCosto() * (15/120)
+  if(k.startsWith('salsa_')){
+    const salsaKey = k.replace('salsa_','')
+    return salsaCostoG(salsaKey) * g
+  }
+  if(INSUMOS_BASE[k]) return getP(k) * g
+  return 0
+}
+
+function costoReceta(rec, tipo){
+  let total = 0
+  rec.ingredientes.forEach(ing => {
+    const g = ing.g || ing[1] || 0
+    const k = ing.k || ing[0]
+    total += costoIng(k, g)
+  })
+  return total
+}
+
+// ── RENDER COSTOS ─────────────────────────────────────────────
+let costosFiltro = 'todos'
+function filtrarCostos(f, btn){
+  costosFiltro = f
+  document.querySelectorAll('.cfiltro').forEach(b=>b.classList.remove('on'))
+  btn.classList.add('on')
+  renderCostos()
+}
+
+function renderCostos(){
+  const el = document.getElementById('costos-lista')
+  if(!el) return
+  let html = ''
+
+  const renderCard = (rec, tipo) => {
+    const costo = costoReceta(rec, tipo)
+    const margen = ((rec.pv - costo) / rec.pv * 100).toFixed(1)
+    const id = 'cc_'+tipo+'_'+rec.n.replace(/\s/g,'_')
+    html += `<div class="costo-card">
+      <div class="costo-header" onclick="toggleCostoBody('${id}')">
+        <div>
+          <span class="costo-nombre">${rec.n}</span>
+          <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted);margin-left:.5rem">${tipo==='roll'?'Roll · 8pzs':tipo==='nigiri'?'Nigiri · 1pz':'Salsa'}</span>
+        </div>
+        <div class="costo-badges">
+          <span class="costo-margen">${margen}%</span>
+          <span class="costo-precio">${money(rec.pv)}</span>
+          <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted)">▾</span>
+        </div>
+      </div>
+      <div class="costo-body" id="${id}">`
+    
+    rec.ingredientes.forEach(ing => {
+      const g = ing.g || ing[1] || 0
+      const k = ing.k || ing[0]
+      const desc = ing.desc || (INSUMOS_BASE[k]?.n || k)
+      const c = costoIng(k, g)
+      html += `<div class="costo-row">
+        <span class="costo-ing">${desc}</span>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span class="costo-g">${ing.hoja?g+'hj':g+'g'}</span>
+          <span class="costo-val">${money(c)}</span>
+        </div>
+      </div>`
+    })
+
+    html += `<div class="costo-total-row">
+        <span class="costo-total-lbl">Costo total · margen ${margen}%</span>
+        <span class="costo-total-val">${money(costo)} / ${money(rec.pv - costo)} gan.</span>
+      </div>
+      </div>
+    </div>`
+  }
+
+  if(costosFiltro==='todos'||costosFiltro==='rolls'){
+    html += `<div class="slabel" style="margin-top:0">Rolls</div>`
+    RECETAS_ROLLS.forEach(r => renderCard(r,'roll'))
+  }
+  if(costosFiltro==='todos'||costosFiltro==='nigiris'){
+    html += `<div class="slabel" style="margin-top:1.25rem">Nigiris</div>`
+    RECETAS_NIGIRIS.forEach(r => renderCard(r,'nigiri'))
+  }
+  if(costosFiltro==='todos'||costosFiltro==='salsas'){
+    html += `<div class="slabel" style="margin-top:1.25rem">Salsas</div>`
+    RECETAS_SALSAS.forEach(s => {
+      const cBatch = s.ingredientes.reduce((a,ing)=>{
+        const g = ing.g || ing[1] || 0
+        const k = ing.k || ing[0]
+        return a + (INSUMOS_BASE[k] ? getP(k)*g : 0)
+      }, 0)
+      const cRoll = salsaCostoG(s.k) * s.usoRoll
+      const cNig  = salsaCostoG(s.k) * s.usoNig
+      const id = 'cc_salsa_'+s.k
+      html += `<div class="costo-card">
+        <div class="costo-header" onclick="toggleCostoBody('${id}')">
+          <span class="costo-nombre">${s.n}</span>
+          <div class="costo-badges">
+            <span style="font-family:var(--mono);font-size:.7rem;color:var(--dim)">Roll ${money(cRoll)} · Nig ${money(cNig)}</span>
+            <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted)">▾</span>
+          </div>
+        </div>
+        <div class="costo-body" id="${id}">`
+      s.ingredientes.forEach(ing => {
+        const g = ing.g || ing[1] || 0
+        const k = ing.k || ing[0]
+        const n = INSUMOS_BASE[k]?.n || k
+        const c = INSUMOS_BASE[k] ? getP(k)*g : 0
+        html += `<div class="costo-row">
+          <span class="costo-ing">${n}</span>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <span class="costo-g">${g}g</span>
+            <span class="costo-val">${money(c)}</span>
+          </div>
+        </div>`
+      })
+      html += `<div class="costo-total-row">
+          <span class="costo-total-lbl">Batch ${s.batch}g → x roll(${s.usoRoll}g) / x nigiri(${s.usoNig}g)</span>
+          <span class="costo-total-val">${money(cBatch)}</span>
+        </div></div></div>`
+    })
+  }
+
+  el.innerHTML = html
+}
+
+function toggleCostoBody(id){
+  const el = document.getElementById(id)
+  if(el) el.classList.toggle('open')
+}
+
+// ── RENDER INSUMOS ────────────────────────────────────────────
+const INSUMOS_GRUPOS = [
+  {titulo:'Proteínas',   keys:['salmon','trucha','langostino','pescablanca']},
+  {titulo:'Shari / Base',keys:['arroz','nori','vinagre','azucar','mirin','sal']},
+  {titulo:'Frescos',     keys:['qcrema','palta','lima','maracuya','cebollino','negi','quinoa','krein_ing','cebolla','cilantro']},
+  {titulo:'Condimentos', keys:['kewpie','sriracha','gochujang','wasabi','sesamo_ac','trufa_ac','aji_pasta','rocoto_pasta','soja','hondashi','miel','maicena','ajo']},
+  {titulo:'Crocantes',   keys:['panko','maiz','filo','furikake','tempura','cebfrita','sesamo_n','sesamo_m']},
+  {titulo:'Salsas / Misc',keys:['mani','almendras','nueces','azucar_r','pimienta','oliva','galleta','qfresco','ponzu','boken']},
+]
+
+function renderInsumos(){
+  const el = document.getElementById('insumos-lista')
+  if(!el) return
+  let html = ''
+  INSUMOS_GRUPOS.forEach(grupo => {
+    html += `<div class="ins-section"><div class="ins-section-title">${grupo.titulo}</div>`
+    grupo.keys.forEach(k => {
+      const ins = INSUMOS_BASE[k]
+      const val = getP(k)
+      html += `<div class="ins-row">
+        <div>
+          <div class="ins-nombre">${ins.n}</div>
+          <div class="ins-proveedor">${ins.prov} · ${ins.unit}</div>
+        </div>
+        <input class="ins-inp" type="number" step="0.01" value="${val.toFixed(2)}"
+          onchange="updateInsumo('${k}',this.value)"
+          title="Precio por g/ml">
+        <span class="ins-unit">$/g</span>
+      </div>`
+    })
+    html += `</div>`
+  })
+  el.innerHTML = html
+}
+
+function updateInsumo(key, val){
+  const v = parseFloat(val)
+  if(isNaN(v)||v<0) return
+  localStorage.setItem('raco_ins_'+key, v)
+  showToast('Precio actualizado ✓')
+  // Recalculate costos if open
+  if(document.getElementById('tab-costos').classList.contains('on')) renderCostos()
+}
+
+function resetInsumos(){
+  if(!confirm('¿Resetear todos los precios a los valores originales?')) return
+  Object.keys(INSUMOS_BASE).forEach(k => localStorage.removeItem('raco_ins_'+k))
+  renderInsumos()
+  showToast('Precios reseteados ✓')
+}
+
+// ── RENDER ORDEN DE COMPRA ─────────────────────────────────────
+function renderCompras(){
+  const el = document.getElementById('compras-lista')
+  if(!el) return
+  const ords = getOrdenes().filter(o=>!o.listo)
+  if(!ords.length){
+    el.innerHTML = '<div class="empty-hist">No hay órdenes pendientes</div>'
+    return
+  }
+
+  // Sumar gramos necesarios por insumo
+  const totales = {} // key -> gramos totales
+  const add = (k, g) => { totales[k] = (totales[k]||0) + g }
+
+  ords.forEach(o => {
+    // Rolls
+    RECETAS_ROLLS.forEach((rec, i) => {
+      const q = o.rq[i] || 0
+      if(!q) return
+      rec.ingredientes.forEach(ing => {
+        const g = ing.g || ing[1] || 0
+        const k = ing.k || ing[0]
+        if(k === 'shari' || k === 'shari_n') return // no se compra shari directo
+        if(k.startsWith('salsa_')) return // salsas se manejan aparte
+        add(k, g * q)
+      })
+      // Shari → arroz
+      add('arroz', 120 * q / 1.8)     // 120g cocido → ~67g seco
+      add('nori', 1 * q)
+    })
+    // Nigiris
+    RECETAS_NIGIRIS.forEach((rec, i) => {
+      const q = o.nq[i] || 0
+      if(!q) return
+      rec.ingredientes.forEach(ing => {
+        const g = ing.g || ing[1] || 0
+        const k = ing.k || ing[0]
+        if(k === 'shari_n' || k === 'shari') return
+        if(k.startsWith('salsa_')) return
+        add(k, g * q)
+      })
+      add('arroz', 15 * q / 1.8)
+    })
+  })
+
+  // Agregar packaging
+  const totalPedidos = ords.length
+  const packCosto = totalPedidos * 240
+
+  // Agrupar por proveedor
+  const porProv = {}
+  Object.entries(totales).forEach(([k, g]) => {
+    if(!INSUMOS_BASE[k]) return
+    const ins = INSUMOS_BASE[k]
+    const prov = ins.prov
+    if(!porProv[prov]) porProv[prov] = []
+    porProv[prov].push({k, n:ins.n, g:Math.ceil(g), costo: Math.ceil(getP(k)*g)})
+  })
+
+  let html = `<div style="font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:.08em;margin-bottom:1rem;text-transform:uppercase">${ords.length} orden${ords.length>1?'es':''} pendiente${ords.length>1?'s':''}</div>`
+
+  let totalGeneral = 0
+  Object.entries(porProv).sort().forEach(([prov, items]) => {
+    const subtotal = items.reduce((a,i)=>a+i.costo,0)
+    totalGeneral += subtotal
+    html += `<div class="compra-section">
+      <div class="compra-proveedor">🛒 ${prov}</div>`
+    items.sort((a,b)=>a.n.localeCompare(b.n)).forEach(it => {
+      html += `<div class="compra-row">
+        <span class="compra-ing">${it.n}</span>
+        <div class="compra-detalle">
+          <span class="compra-g">${it.g}g</span>
+          <span class="compra-costo">${money(it.costo)}</span>
+        </div>
+      </div>`
+    })
+    html += `<div class="compra-total"><span>Subtotal ${prov}</span><span>${money(subtotal)}</span></div>
+    </div>`
+  })
+
+  totalGeneral += packCosto
+  html += `<div class="compra-section">
+    <div class="compra-proveedor">📦 Packaging</div>
+    <div class="compra-row">
+      <span class="compra-ing">Packaging por pedido (${totalPedidos} pedidos)</span>
+      <div class="compra-detalle"><span class="compra-g">${totalPedidos}u</span><span class="compra-costo">${money(packCosto)}</span></div>
+    </div>
+    <div class="compra-total"><span>Subtotal Packaging</span><span>${money(packCosto)}</span></div>
+  </div>`
+
+  html += `<div style="background:rgba(201,169,110,.08);border:.5px solid var(--accent2);border-radius:7px;padding:.85rem 1rem;margin-top:.5rem;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)">Total estimado de compras</span>
+    <span style="font-family:var(--mono);font-size:1.1rem;font-weight:500;color:var(--accent)">${money(totalGeneral)}</span>
+  </div>`
+
+  html += `<button class="btn ghost" style="width:100%;margin-top:.75rem" onclick="copiarListaCompras()">Copiar lista de compras</button>`
+
+  el.innerHTML = html
+}
+
+function copiarListaCompras(){
+  const ords = getOrdenes().filter(o=>!o.listo)
+  if(!ords.length){ showToast('No hay órdenes pendientes'); return }
+  const el = document.getElementById('compras-lista')
+  let txt = `🛒 COMPRAS · ${today()}\n${ords.length} órdenes pendientes\n${'─'.repeat(30)}\n`
+  el.querySelectorAll('.compra-section').forEach(sec => {
+    const prov = sec.querySelector('.compra-proveedor')?.textContent?.trim() || ''
+    txt += `\n${prov}\n`
+    sec.querySelectorAll('.compra-row').forEach(row => {
+      const ing = row.querySelector('.compra-ing')?.textContent?.trim() || ''
+      const g = row.querySelector('.compra-g')?.textContent?.trim() || ''
+      const c = row.querySelector('.compra-costo')?.textContent?.trim() || ''
+      txt += `  ${ing}: ${g} — ${c}\n`
+    })
+  })
+  navigator.clipboard.writeText(txt).then(()=>showToast('Lista copiada ✓')).catch(()=>showToast('No se pudo copiar'))
 }
 
 buildList(ROLLS,rq,'r','list-rolls')
