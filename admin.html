@@ -474,6 +474,7 @@ function goTab(name,btn){
   if(name==='acumulado')renderAcumulado()
   if(name==='stats')renderStats()
   if(name==='ruta')renderRuta()
+  if(name==='stock')renderStock()
 }
 
 // Maps
@@ -1214,13 +1215,6 @@ function toggleProducto(key, on){
   saveStock(s)
   renderStock()
   showToast(on?'Producto activo ✓':'Producto desactivado')
-}
-
-// Interceptar goTab para renderizar stock
-const _origGoTab=goTab
-function goTab(name,btn){
-  _origGoTab(name,btn)
-  if(name==='stock') renderStock()
 }
 
 // ── ESTADÍSTICAS ──────────────────────────────────────────────────
