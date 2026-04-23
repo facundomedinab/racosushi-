@@ -221,6 +221,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .mbtn{padding:.65rem;border-radius:6px;font-family:var(--mono);font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s;border:none;font-weight:500}
 .mbtn.wa{background:#1a3a22;color:#86efac;border:.5px solid #2d5c37}.mbtn.wa:hover{background:#1f4428}
 .mbtn.back{background:transparent;border:.5px solid var(--border2);color:var(--dim)}.mbtn.back:hover{border-color:var(--dim);color:var(--text2)}
+
+/* ── SECCIÓN NAV ── */
+.seccion-nav{display:flex;gap:.35rem;margin-bottom:1rem}
+.seccion-btn{background:transparent;border:.5px solid var(--border2);border-radius:4px;color:var(--muted);font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:.4rem .85rem;cursor:pointer;transition:all .15s}
+.seccion-btn:hover{color:var(--dim);border-color:var(--dim)}
+.seccion-btn.on{background:var(--accent);color:#0d0d0d;border-color:var(--accent);font-weight:500}
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 </style>
@@ -266,13 +273,32 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
         </div>
       </div>
     </div>
-    <nav class="tabs">
+    <!-- SECCION NAV -->
+    <nav class="seccion-nav">
+      <button class="seccion-btn on" id="snav-jornada" onclick="goSeccion('jornada',this)">Jornada</button>
+      <button class="seccion-btn" id="snav-stats" onclick="goSeccion('stats',this)">Estadísticas</button>
+      <button class="seccion-btn" id="snav-cocina" onclick="goSeccion('cocina',this)">Cocina</button>
+    </nav>
+
+    <!-- JORNADA TABS -->
+    <nav class="tabs" id="tabs-jornada">
       <button class="tab on" onclick="goTab('nueva',this)">Nueva orden</button>
       <button class="tab" onclick="goTab('ordenes',this)">Órdenes <span id="tab-cnt" style="opacity:.6"></span></button>
       <button class="tab" onclick="goTab('acumulado',this)">Acumulado</button>
       <button class="tab" onclick="goTab('ruta',this)">Ruta del día</button>
-      <button class="tab" onclick="goTab('stock',this)">Stock</button>
-      <button class="tab" onclick="goTab('stats',this)">Estadísticas</button>
+    </nav>
+
+    <!-- ESTADISTICAS TABS -->
+    <nav class="tabs" id="tabs-stats" style="display:none">
+      <button class="tab on" onclick="goTab('stats',this)">Estadísticas</button>
+    </nav>
+
+    <!-- COCINA TABS -->
+    <nav class="tabs" id="tabs-cocina" style="display:none">
+      <button class="tab on" onclick="goTab('stock',this)">Stock</button>
+      <button class="tab" onclick="goTab('costos',this)">Costos</button>
+      <button class="tab" onclick="goTab('insumos',this)">Insumos</button>
+      <button class="tab" onclick="goTab('compras',this)">Orden de compra</button>
     </nav><!-- NUEVA ORDEN -->
   <div id="tab-nueva" class="panel on">
     <!-- PEGAR PEDIDO WA -->
@@ -377,6 +403,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <div id="stock-wrap"><div class="empty-hist">Cargando stock...</div></div>
   </div>
 
+
+  <!-- COSTOS -->
+  <div id="tab-costos" class="panel">
+    <div id="costos-wrap"><div class="empty-hist">Próximamente — recetas y costos de cada producto</div></div>
+  </div>
+
+  <!-- INSUMOS -->
+  <div id="tab-insumos" class="panel">
+    <div id="insumos-wrap"><div class="empty-hist">Próximamente — precios de insumos por proveedor</div></div>
+  </div>
+
+  <!-- ORDEN DE COMPRA -->
+  <div id="tab-compras" class="panel">
+    <div id="compras-wrap"><div class="empty-hist">Próximamente — orden de compra basada en las órdenes del día</div></div>
+  </div>
+
   <!-- ESTADÍSTICAS -->
   <div id="tab-stats" class="panel">
     <div id="stats-wrap"><div class="empty-hist">Guardá órdenes para ver estadísticas</div></div>
@@ -473,12 +515,55 @@ const today=()=>{const d=new Date();return `${d.getDate()}/${d.getMonth()+1}/${d
 
 $('f-fecha').placeholder=today()
 
+// Secciones
+const SECCION_TABS = {
+  jornada: ['tabs-jornada', ['nueva','ordenes','acumulado','ruta']],
+  stats:   ['tabs-stats',   ['stats']],
+  cocina:  ['tabs-cocina',  ['stock','costos','insumos','compras']],
+}
+function goSeccion(name, btn){
+  document.querySelectorAll('.seccion-btn').forEach(b=>b.classList.remove('on'))
+  btn.classList.add('on')
+  // show/hide tab navs
+  Object.entries(SECCION_TABS).forEach(([sec,[navId, tabs]])=>{
+    document.getElementById(navId).style.display = sec===name ? 'flex' : 'none'
+  })
+  // show first tab of section
+  const firstTab = SECCION_TABS[name][1][0]
+  const tabNav = document.getElementById(SECCION_TABS[name][0])
+  tabNav.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'))
+  tabNav.querySelector('.tab').classList.add('on')
+  goTab(firstTab, tabNav.querySelector('.tab'))
+}
+
+// Secciones
+const SECCION_TABS = {
+  jornada: ['tabs-jornada', ['nueva','ordenes','acumulado','ruta']],
+  stats:   ['tabs-stats',   ['stats']],
+  cocina:  ['tabs-cocina',  ['stock','costos','insumos','compras']],
+}
+function goSeccion(name, btn){
+  document.querySelectorAll('.seccion-btn').forEach(b=>b.classList.remove('on'))
+  btn.classList.add('on')
+  Object.keys(SECCION_TABS).forEach(sec=>{
+    document.getElementById(SECCION_TABS[sec][0]).style.display = sec===name ? 'flex' : 'none'
+  })
+  const firstTab = SECCION_TABS[name][1][0]
+  const tabNav = document.getElementById(SECCION_TABS[name][0])
+  tabNav.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'))
+  tabNav.querySelector('.tab').classList.add('on')
+  goTab(firstTab, tabNav.querySelector('.tab'))
+}
+
 // Tabs
 function goTab(name,btn){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'))
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'))
   $('tab-'+name).classList.add('on')
-  if(btn)btn.classList.add('on')
+  if(btn){
+    // only remove 'on' from tabs in the same nav
+    btn.closest('nav')?.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'))
+    btn.classList.add('on')
+  }
   if(name==='ordenes'){renderOrdenes();updateUserMenu()}
   if(name==='acumulado'){renderAcumulado();updateUserMenu()}
   if(name==='stats')renderStats()
