@@ -865,18 +865,22 @@ function enviarTracking(id){
 }
 
 // Guardar
+let dirConfirmadaOrden = null
+let _ordenParaConfirmar = null
+
 function guardar(){
   if(!rq.some(q=>q>0)&&!nq.some(q=>q>0)&&!eq.some(q=>q>0)){showToast('Agregá productos primero');return}
   if(!$('f-cliente').value.trim()){showToast('Ingresá el nombre del cliente');return}
   let sub=0
   ROLLS.forEach((it,i)=>sub+=it.v*rq[i])
   NIGIRIS.forEach((it,i)=>sub+=it.v*nq[i])
+  EXTRAS.forEach((it,i)=>sub+=it.v*eq[i])
   const envio=parseInt($('s-envio').value)||0
   const now=new Date()
   const hora=(window._parsedHora) || (now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0'))
   window._parsedHora = null
   window._parsedPago = null
-  const dpto=$('f-dpto').value.trim()
+  const dpto=$('f-dpto')?$('f-dpto').value.trim():''
   const numero=$('f-numero')?$('f-numero').value.trim():''
   const localidad=$('f-localidad')?$('f-localidad').value.trim():''
   const calleBase=$('f-addr').value.trim()
@@ -889,7 +893,7 @@ function guardar(){
     hora:hora,
     tel:$('f-tel').value.trim(),
     nota:$('f-nota').value.trim(),
-    pago: window._parsedPago || formPago || '',
+    pago: formPago || '',
     addr:addrBase,
     dpto:dpto,
     addrDisplay:addrDisplay,
@@ -897,14 +901,13 @@ function guardar(){
     envio,total:sub+envio,listo:false,
   }
   const ords=getOrdenes();ords.push(orden);saveOrdenes(ords)
-  // Guardar también en historial permanente de estadísticas
   const hist=JSON.parse(localStorage.getItem('sushi_hist_stats')||'[]')
   hist.push({...orden})
   localStorage.setItem('sushi_hist_stats',JSON.stringify(hist))
   updateTabCount();resetOrden()
-  parsedOrden=null  // limpiar parser
+  dirConfirmadaOrden=null
+  parsedOrden=null
   showToast('Orden guardada ✓')
-  // Mostrar modal para confirmar si enviar WA (window.open automático es bloqueado por el navegador)
   if(orden.tel){
     _ordenParaConfirmar = orden
     $('confirm-overlay').classList.add('show')
@@ -913,7 +916,6 @@ function guardar(){
   }
 }
 
-let _ordenParaConfirmar = null
 function cerrarConfirm(enviarWA){
   $('confirm-overlay').classList.remove('show')
   if(enviarWA && _ordenParaConfirmar) enviarConfirmacion(_ordenParaConfirmar)
