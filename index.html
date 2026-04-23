@@ -84,6 +84,17 @@ section{padding:7rem 2.5rem}
 .menu-card-price{position:absolute;top:1rem;right:1rem;font-family:var(--mono);font-size:.72rem;color:var(--gold);background:rgba(8,8,8,.8);padding:.2rem .5rem;border-radius:1px}
 .menu-cta{text-align:center;margin-top:3rem}
 
+
+/* ── SCROLL FADE MOBILE ── */
+@media(max-width:768px){
+  .hero{-webkit-mask-image:linear-gradient(to bottom,black 60%,transparent 100%);mask-image:linear-gradient(to bottom,black 60%,transparent 100%)}
+}
+
+/* ── MENU GRID FADE ── */
+.menu-grid-wrap{position:relative}
+.menu-grid-wrap::after{content:'';position:absolute;bottom:0;left:0;right:0;height:180px;background:linear-gradient(to bottom,transparent,#0c0c0c);pointer-events:none;z-index:2}
+.menu-cta-bottom{text-align:center;padding-top:2.5rem;position:relative;z-index:3}
+
 /* ── ZONA ── */
 .zona{background:var(--bg)}
 .zona-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start}
@@ -215,35 +226,39 @@ footer{padding:2.5rem;border-top:.5px solid var(--border);display:flex;justify-c
         <div class="section-tag">Nuestra propuesta</div>
         <h2 class="section-title"><span class="c-sal">Menú</span></h2>
       </div>
-      <a href="https://racosushi.com.ar/menu.html" class="btn-primary">Ver menú completo →</a>
     </div>
-    <div class="menu-grid fade-up">
-      <div class="menu-card">
-        <img src="https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=600&q=80" alt="Rolls">
-        <div class="menu-card-overlay">
-          <div class="menu-card-cat">Rolls clásicos</div>
-          <div class="menu-card-name">NY Phila · Salmón Palta · Ebi Furai</div>
-          <div class="menu-card-desc">8 piezas · uramaki</div>
+    <div class="menu-grid-wrap fade-up">
+      <div class="menu-grid">
+        <div class="menu-card">
+          <img src="https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=600&q=80" alt="Rolls">
+          <div class="menu-card-overlay">
+            <div class="menu-card-cat">Rolls clásicos</div>
+            <div class="menu-card-name">NY Phila · Salmón Palta · Ebi Furai</div>
+            <div class="menu-card-desc">8 piezas · uramaki</div>
+          </div>
+          <div class="menu-card-price">$10.000</div>
         </div>
-        <div class="menu-card-price">$10.000</div>
+        <div class="menu-card">
+          <img src="https://images.unsplash.com/photo-1559410545-0bdcd187e0a6?w=600&q=80" alt="Rolls autor">
+          <div class="menu-card-overlay">
+            <div class="menu-card-cat">Rolls de autor</div>
+            <div class="menu-card-name">Maracuyá · Ají Roll · Krein · Acevichado</div>
+            <div class="menu-card-desc">8 piezas · recetas propias</div>
+          </div>
+          <div class="menu-card-price">$13.000</div>
+        </div>
+        <div class="menu-card">
+          <img src="https://images.unsplash.com/photo-1534482421-64566f976cfa?w=600&q=80" alt="Nigiris">
+          <div class="menu-card-overlay">
+            <div class="menu-card-cat">Nigiris</div>
+            <div class="menu-card-name">Trucha · Pesca · Langostino · Ikura</div>
+            <div class="menu-card-desc">por pieza · par = $5.000</div>
+          </div>
+          <div class="menu-card-price">$2.500</div>
+        </div>
       </div>
-      <div class="menu-card">
-        <img src="https://images.unsplash.com/photo-1559410545-0bdcd187e0a6?w=600&q=80" alt="Rolls autor">
-        <div class="menu-card-overlay">
-          <div class="menu-card-cat">Rolls de autor</div>
-          <div class="menu-card-name">Maracuyá · Ají Roll · Krein · Acevichado</div>
-          <div class="menu-card-desc">8 piezas · recetas propias</div>
-        </div>
-        <div class="menu-card-price">$13.000</div>
-      </div>
-      <div class="menu-card">
-        <img src="https://images.unsplash.com/photo-1534482421-64566f976cfa?w=600&q=80" alt="Nigiris">
-        <div class="menu-card-overlay">
-          <div class="menu-card-cat">Nigiris</div>
-          <div class="menu-card-name">Trucha · Pesca · Langostino · Ikura</div>
-          <div class="menu-card-desc">por pieza · par = $5.000</div>
-        </div>
-        <div class="menu-card-price">$2.500</div>
+      <div class="menu-cta-bottom">
+        <a href="https://racosushi.com.ar/menu.html" class="btn-primary">Ver menú completo →</a>
       </div>
     </div>
   </div>
