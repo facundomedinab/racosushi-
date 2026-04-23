@@ -176,8 +176,8 @@ footer{padding:2.5rem;border-top:.5px solid var(--border);display:flex;justify-c
 .ing-track-wrap{overflow:hidden;flex:1}
 .ing-track{display:flex;gap:1.5px;transition:transform .4s ease}
 .ing-card{flex:0 0 calc(33.333% - 1px);background:#0c0c0c;overflow:hidden;min-width:0}
-.ing-img-wrap{aspect-ratio:3/4;overflow:hidden;background:#111}
-.ing-img-wrap img{width:100%;height:100%;object-fit:cover;filter:brightness(.85);transition:all .5s ease}
+.ing-img-wrap{aspect-ratio:2/3;overflow:hidden;background:#111;height:380px}
+.ing-img-wrap img{width:100%;height:100%;object-fit:contain;filter:brightness(.95);transition:all .5s ease;padding:.5rem;background:#0c0c0c}
 .ing-card:hover .ing-img-wrap img{filter:brightness(1);transform:scale(1.03)}
 .ing-info{padding:.85rem 1rem;border-top:.5px solid var(--border)}
 .ing-name{font-family:var(--mono);font-size:.82rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
@@ -206,6 +206,7 @@ footer{padding:2.5rem;border-top:.5px solid var(--border);display:flex;justify-c
     <li><a href="#historia">Nosotros</a></li>
     <li><a href="#menu">Menú</a></li>
     <li><a href="#zona">Zona</a></li>
+    <li><a href="#ingredientes">Galería</a></li>
     <li><a href="#contacto">Contacto</a></li>
   </ul>
   <a href="https://racosushi.com.ar/menu.html" class="nav-cta">Hacer pedido →</a>
@@ -387,6 +388,7 @@ footer{padding:2.5rem;border-top:.5px solid var(--border);display:flex;justify-c
   <a href="#historia" onclick="toggleMenu()">Nosotros</a>
   <a href="#menu" onclick="toggleMenu()">Menú</a>
   <a href="#zona" onclick="toggleMenu()">Zona</a>
+  <a href="#ingredientes" onclick="toggleMenu()">Galería</a>
   <a href="#contacto" onclick="toggleMenu()">Contacto</a>
   <a href="https://racosushi.com.ar/menu.html" class="mobile-menu-cta">Hacer pedido →</a>
 </div>
