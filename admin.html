@@ -466,7 +466,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <div id="insumos-wrap">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
         <span style="font-size:.78rem;color:var(--dim)">Editá los precios — los costos se recalculan solos</span>
-        <button class="btn ghost" style="padding:.3rem .65rem;font-size:.6rem" onclick="resetInsumos()">Resetear precios</button>
+        <div style="display:flex;gap:.4rem">
+          <button class="btn ghost" style="padding:.3rem .65rem;font-size:.6rem" onclick="exportarInsumosCSV()">↓ Exportar CSV</button>
+          <button class="btn ghost" style="padding:.3rem .65rem;font-size:.6rem" onclick="resetInsumos()">Resetear precios</button>
+        </div>
       </div>
       <div id="insumos-lista"></div>
     </div>
@@ -1940,6 +1943,26 @@ function updateInsumo(key, val){
   if(document.getElementById('tab-costos').classList.contains('on')) renderCostos()
 }
 
+
+function exportarInsumosCSV(){
+  let csv = 'Ingrediente,Proveedor,Unidad,Precio por g ($)\n'
+  INSUMOS_GRUPOS.forEach(grupo => {
+    grupo.keys.forEach(k => {
+      const ins = INSUMOS_BASE[k]
+      const precio = getP(k).toFixed(4)
+      const nombre = ins.n.replace(/,/g,'')
+      csv += `${nombre},${ins.prov},${ins.unit},${precio}\n`
+    })
+  })
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'})
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'insumos_raco_' + today().replace(/\//g,'-') + '.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+  showToast('CSV descargado ✓')
+}
 function resetInsumos(){
   if(!confirm('¿Resetear todos los precios a los valores originales?')) return
   Object.keys(INSUMOS_BASE).forEach(k => localStorage.removeItem('raco_ins_'+k))
