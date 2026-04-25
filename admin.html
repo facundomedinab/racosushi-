@@ -2289,21 +2289,24 @@ function copiarListaCompras(){
 // ── RECETAS CSV IMPORT/EXPORT ──────────────────────────────
 // Format: tipo,nombre,precio_venta,ingrediente_key,gramos,ingrediente_key2,gramos2,...
 function exportarRecetasCSV(){
-  let csv = 'tipo,nombre,precio_venta'
+  const SEP = ';'
   const maxIng = Math.max(...[...RECETAS_ROLLS,...RECETAS_NIGIRIS].map(r=>r.ingredientes.length))
-  for(let i=1;i<=maxIng;i++) csv += `,ingrediente${i},gramos${i}`
-  csv += '\n'
+  let hdr = ['tipo','nombre','precio_venta']
+  for(let i=1;i<=maxIng;i++) hdr.push(`ingrediente${i}`,`gramos${i}`)
+  let csv = hdr.join(SEP) + '\n'
 
   const exportRec = (rec, tipo) => {
     const pv = getRec(tipo, rec.n, 'pv', rec.pv)
-    let row = `${tipo},"${rec.n}",${pv}`
-    rec.ingredientes.forEach(ing => { row += `,${ing.k},${ing.g}` })
-    csv += row + '\n'
+    const cols = [tipo, rec.n, pv]
+    rec.ingredientes.forEach(ing => cols.push(ing.k, ing.g))
+    // Pad to same length
+    while(cols.length < hdr.length) cols.push('')
+    csv += cols.join(SEP) + '\n'
   }
   RECETAS_ROLLS.forEach(r=>exportRec(r,'roll'))
   RECETAS_NIGIRIS.forEach(r=>exportRec(r,'nigiri'))
 
-  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'})
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'})
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href=url; a.download='recetas_raco_'+today().replace(/\//g,'-')+'.csv'; a.click()
@@ -2315,27 +2318,25 @@ function importarRecetasCSV(input){
   const file = input.files[0]; if(!file) return
   const reader = new FileReader()
   reader.onload = e => {
-    const lines = e.target.result.split('\n').filter(l=>l.trim())
-    const header = lines[0].split(',')
+    const text = e.target.result.replace(/^\uFEFF/,'') // strip BOM
+    const lines = text.split('\n').filter(l=>l.trim())
+    // Auto-detect separator
+    const firstLine = lines[0]
+    const SEP = firstLine.includes(';') ? ';' : ','
     let updated=0, added=0
 
     lines.slice(1).forEach(line => {
-      // Handle quoted fields
-      const parts = []
-      let cur='', inQ=false
-      for(const ch of line){ if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){parts.push(cur);cur=''}else{cur+=ch} }
-      parts.push(cur)
-
-      const tipo   = parts[0]?.trim()
-      const nombre = parts[1]?.trim()
+      const parts = line.split(SEP).map(p=>p.trim())
+      const tipo   = parts[0]
+      const nombre = parts[1]
       const pv     = parseFloat(parts[2])
       if(!tipo||!nombre||isNaN(pv)) return
 
-      // Parse ingredients
+      // Parse ingredients — skip empty pairs
       const ings = []
       for(let i=3;i<parts.length-1;i+=2){
         const k=parts[i]?.trim(), g=parseFloat(parts[i+1])
-        if(k&&!isNaN(g)&&g>0){
+        if(k&&k!==''&&!isNaN(g)&&g>0){
           const desc = INSUMOS_BASE[k]?.n || k
           ings.push({k, g, desc})
         }
@@ -2344,7 +2345,6 @@ function importarRecetasCSV(input){
       // Save price override
       localStorage.setItem('raco_rec_'+tipo+'_'+nombre.replace(/[^a-zA-Z0-9]/g,'_')+'_pv', pv)
 
-      // Update or add to the right array
       const arr = tipo==='roll' ? RECETAS_ROLLS : tipo==='nigiri' ? RECETAS_NIGIRIS : null
       if(!arr) return
       const idx = arr.findIndex(r=>r.n===nombre)
@@ -2353,17 +2353,20 @@ function importarRecetasCSV(input){
         arr[idx].pv = pv
         updated++
       } else {
+        if(!ings.length){ showToast('Nuevo roll sin ingredientes válidos: '+nombre); return }
         arr.push({n:nombre, pv, ingredientes:ings})
         added++
-        // Also update menu arrays via localStorage flag
-        localStorage.setItem('raco_menu_custom', JSON.stringify({rolls:RECETAS_ROLLS.map(r=>({n:r.n,pv:getRec('roll',r.n,'pv',r.pv)})),nigiris:RECETAS_NIGIRIS.map(r=>({n:r.n,pv:getRec('nigiri',r.n,'pv',r.pv)}))}))
       }
     })
 
-    // Sync prices to menu localStorage keys
     syncPreciosMenu()
+    // Rebuild compras simulator inputs
+    const simR = document.getElementById('sim-rolls')
+    const simN = document.getElementById('sim-nigiris')
+    if(simR) simR.innerHTML=''
+    if(simN) simN.innerHTML=''
     renderCostos()
-    showToast(`Recetas: ${updated} actualizadas, ${added} nuevas`)
+    showToast(`Recetas: ${updated} actualizadas${added?' · '+added+' nuevas':''}`)
     input.value=''
   }
   reader.readAsText(file)
