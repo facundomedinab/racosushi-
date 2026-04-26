@@ -489,8 +489,27 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       <div class="slabel" style="margin-top:1rem">Nigiris <span>por pieza</span></div>
       <div id="sim-nigiris" style="display:flex;flex-direction:column;gap:.3rem"></div>
 
+      <!-- RESUMEN POR PERSONA -->
+      <div id="compras-resumen" style="margin-top:1.5rem;display:none">
+        <div style="background:var(--surface);border:.5px solid var(--border);border-radius:7px;padding:.85rem 1rem;margin-bottom:1rem">
+          <div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.75rem">Resumen de la preparación</div>
+          <div id="resumen-stats" style="display:flex;flex-direction:column;gap:.4rem"></div>
+          <div style="display:flex;align-items:center;gap:.75rem;margin-top:1rem;padding-top:.75rem;border-top:.5px solid var(--border)">
+            <span style="font-size:.8rem;color:var(--dim);white-space:nowrap">Personas</span>
+            <input id="input-personas" type="number" min="1" value="10"
+              style="background:var(--surface2);border:.5px solid var(--border2);border-radius:4px;padding:.3rem .55rem;color:var(--accent);font-family:var(--mono);font-size:.85rem;outline:none;width:70px;text-align:center"
+              oninput="calcPersonas()">
+            <span style="font-size:.78rem;color:var(--muted)">personas</span>
+          </div>
+          <div id="resumen-por-persona" style="margin-top:.65rem;display:none">
+            <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem">Por persona</div>
+            <div id="resumen-persona-stats" style="display:flex;flex-direction:column;gap:.3rem"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- RESULTADO -->
-      <div id="compras-resultado" style="margin-top:1.5rem"></div>
+      <div id="compras-resultado" style="margin-top:0"></div>
     </div>
   </div>
 
@@ -1962,11 +1981,16 @@ function renderCostos(){
       </div>`
     })
 
+    // Calculate total grams (skip shari key as it's virtual, use actual g values)
+    const totalGramos = rec.ingredientes.reduce((sum, ing)=>{
+      const gSaved = getRec(tipo, rec.n, 'g_'+ing.k+'_'+(ing.desc||'').replace(/\s/g,'_'), ing.g)
+      return sum + (ing.hoja ? 0 : gSaved) // exclude nori sheets from gram count
+    }, 0)
     const pvSug = precioSugerido(costo)
     const pvSugDiff = pvSug !== pvSaved
     html += `<div class="costo-total-row">
         <div style="display:flex;flex-direction:column;gap:.1rem">
-          <span class="costo-total-lbl">Costo total</span>
+          <span class="costo-total-lbl">Costo total · <span style="color:var(--muted)">${Math.round(totalGramos)}g por unidad</span></span>
           <span class="card-margen" style="font-family:var(--mono);font-size:.75rem;color:${margenColor}">${margen}% margen</span>
           ${pvSugDiff ? '<span style=\"font-family:var(--mono);font-size:.65rem;color:var(--accent2)\">💡 Precio sugerido: '+money(pvSug)+'</span>' : ''}
         </div>
@@ -2401,6 +2425,82 @@ function calcCompras(){
   </div>`
 
   el.innerHTML = html
+
+  // Update resumen
+  updateResumen()
+}
+
+function updateResumen(){
+  const totalRolls = simQ.r.reduce((a,v)=>a+v,0)
+  const totalNig   = simQ.n.reduce((a,v)=>a+v,0)
+  if(!totalRolls && !totalNig){
+    document.getElementById('compras-resumen').style.display='none'
+    return
+  }
+  document.getElementById('compras-resumen').style.display='block'
+
+  // Total piezas: rolls = 8 pzas cada uno, nigiris = 1 c/u
+  const piezasRolls = simQ.r.reduce((a,v)=>a+v*8,0)
+  const piezasNig   = simQ.n.reduce((a,v)=>a+v,0)
+  const totalPiezas = piezasRolls + piezasNig
+
+  // Total gramos (approx: rolls ~280g cada uno, nigiris ~35g c/u)
+  let totalGramos = 0
+  RECETAS_ROLLS.forEach((rec,i)=>{
+    if(!simQ.r[i]) return
+    const g = rec.ingredientes.reduce((s,ing)=>s+(ing.hoja?0:(ing.g||0)),0)
+    totalGramos += g * simQ.r[i]
+  })
+  RECETAS_NIGIRIS.forEach((rec,i)=>{
+    if(!simQ.n[i]) return
+    const g = rec.ingredientes.reduce((s,ing)=>s+(ing.hoja?0:(ing.g||0)),0)
+    totalGramos += g * simQ.n[i]
+  })
+
+  const rowStyle = 'display:flex;justify-content:space-between;font-size:.8rem'
+  const valStyle = 'font-family:var(--mono);font-size:.8rem;color:var(--text2)'
+  const statsEl = document.getElementById('resumen-stats')
+  statsEl.innerHTML = [
+    ['Rolls', totalRolls+' '+(totalRolls===1?'unidad':'unidades')],
+    ['Nigiris', totalNig+' '+(totalNig===1?'unidad':'unidades')],
+    ['Piezas de rolls', piezasRolls+' pzas'],
+    ['Unidades de nigiri', piezasNig+' u'],
+    ['Peso total aprox.', Math.round(totalGramos)+'g'],
+  ].map(([l,v])=>`<div style="${rowStyle}"><span style="color:var(--dim)">${l}</span><span style="${valStyle}">${v}</span></div>`).join('')
+
+  calcPersonas()
+}
+
+function calcPersonas(){
+  const totalRolls = simQ.r.reduce((a,v)=>a+v,0)
+  const totalNig   = simQ.n.reduce((a,v)=>a+v,0)
+  if(!totalRolls && !totalNig) return
+
+  const personas = parseInt(document.getElementById('input-personas')?.value)||1
+  const piezasRolls = simQ.r.reduce((a,v)=>a+v*8,0)
+  const piezasNig   = simQ.n.reduce((a,v)=>a+v,0)
+  let totalGramos = 0
+  RECETAS_ROLLS.forEach((rec,i)=>{
+    if(!simQ.r[i]) return
+    totalGramos += rec.ingredientes.reduce((s,ing)=>s+(ing.hoja?0:(ing.g||0)),0) * simQ.r[i]
+  })
+  RECETAS_NIGIRIS.forEach((rec,i)=>{
+    if(!simQ.n[i]) return
+    totalGramos += rec.ingredientes.reduce((s,ing)=>s+(ing.hoja?0:(ing.g||0)),0) * simQ.n[i]
+  })
+
+  const perP = (v) => Math.round(v/personas*10)/10
+  const rowStyle = 'display:flex;justify-content:space-between;font-size:.78rem'
+  const valStyle = 'font-family:var(--mono);font-size:.78rem;color:var(--accent)'
+  const el = document.getElementById('resumen-persona-stats')
+  const wrap = document.getElementById('resumen-por-persona')
+  if(!el||!wrap) return
+  wrap.style.display = 'block'
+  el.innerHTML = [
+    ['Piezas de rolls', perP(piezasRolls)+' pzas'],
+    ['Unidades de nigiri', perP(piezasNig)+' u'],
+    ['Peso aprox.', Math.round(totalGramos/personas)+'g'],
+  ].map(([l,v])=>`<div style="${rowStyle}"><span style="color:var(--dim)">${l}</span><span style="${valStyle}">${v}</span></div>`).join('')
 }
 
 function copiarListaCompras(){
