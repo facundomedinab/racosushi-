@@ -1884,6 +1884,7 @@ const INSUMOS_BASE = {
   // Shari
   arroz:       {n:'Arroz Kometo',                    pg:3.163333,  prov:'Cheap Store',    unit:'30kg'},
   nori:        {n:'Nori (plancha)',                  pg:303.65,    prov:'Cheap Store',    unit:'100u', esHoja:true},
+  kombu:       {n:'Alga Kombu',                      pg:50.0,      prov:'Casa China',     unit:'100g'},
   vinagre:     {n:'Vinagre de arroz Castelo',        pg:12.266667, prov:'Mercado local',  unit:'750ml'},
   azucar:      {n:'Azúcar',                          pg:1.5,       prov:'Supermercado',   unit:'kg'},
   mirin:       {n:'Mirin Hon Kakutsuru',             pg:27.777778, prov:'Casa China',     unit:'1800ml'},
@@ -1965,6 +1966,7 @@ let RECETA_SHARI = {
   ingredientes: [
     {k:'arroz',   g:1000, desc:'Arroz Kometo (seco)'},
     {k:'agua',    g:1100, desc:'Agua (cocción)'},
+    {k:'kombu',   g:5,    desc:'Alga Kombu'},
     {k:'vinagre', g:250,  desc:'Vinagre de arroz'},
     {k:'azucar',  g:70,   desc:'Azúcar'},
     {k:'mirin',   g:100,  desc:'Mirin'},
@@ -1977,15 +1979,15 @@ let RECETA_SHARI = {
   if(s){ try{ RECETA_SHARI = JSON.parse(s) }catch(e){} }
 })()
 
-// SHARI cost per roll (120g cocido)
-function shariCosto(){
+// SHARI — costo por gramo: batch total / gramos totales del batch
+function shariCostoPorGramo(){
   const batchCosto = RECETA_SHARI.ingredientes.reduce((a, ing)=> a + getP(ing.k)*ing.g, 0)
-  return batchCosto / RECETA_SHARI.rendimiento
+  const totalGramos = RECETA_SHARI.ingredientes.reduce((a, ing)=> a + ing.g, 0)
+  return totalGramos > 0 ? batchCosto / totalGramos : 0
 }
-function shariCostoPorNigiri(){
-  const batchCosto = RECETA_SHARI.ingredientes.reduce((a, ing)=> a + getP(ing.k)*ing.g, 0)
-  return batchCosto / (RECETA_SHARI.rendimiento_n || RECETA_SHARI.rendimiento * 8)
-}
+// Costo del shari para un roll (120g) o nigiri (15g)
+function shariCosto(g){ return shariCostoPorGramo() * (g || 120) }
+function shariCostoPorNigiri(){ return shariCostoPorGramo() * 15 }
 
 // SALSAS — retorna costo por g
 // salsaCostoG: costo por gramo de salsa, siempre calculado desde RECETAS_SALSAS
@@ -2190,9 +2192,8 @@ let RECETAS_SALSAS = [
 
 // Costo de un ingrediente de receta
 function costoIng(k, g){
-  if(k === 'shari' || k === 'shari_n') return shariCosto() * (g / (k==='shari'?120:15)) * (k==='shari'?1:1)
-  if(k === 'shari')   return shariCosto()
-  if(k === 'shari_n') return shariCosto() * (15/120)
+  if(k === 'shari')   return shariCostoPorGramo() * g
+  if(k === 'shari_n') return shariCostoPorGramo() * g
   if(k.startsWith('salsa_')){
     // salsaCostoG is now fully dynamic — always looks up RECETAS_SALSAS
     const salsaKey = k.replace('salsa_','')
@@ -2392,24 +2393,12 @@ function renderCostos(){
           <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted);margin-left:.5rem">Batch → ${RECETA_SHARI.rendimiento} rolls · ${RECETA_SHARI.rendimiento_n||RECETA_SHARI.rendimiento*8} nigiris</span>
         </div>
         <div class="costo-badges">
-          <span style="font-family:var(--mono);font-size:.7rem;color:var(--dim)">Roll ${money(costoPorRoll)} · Nig ${money(costoPorNig)}</span>
+          <span style="font-family:var(--mono);font-size:.7rem;color:var(--dim)">${shariCostoPorGramo().toFixed(2)} $/g · Roll(120g) ${money(costoPorRoll)} · Nig(15g) ${money(costoPorNig)}</span>
           <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted)">▾</span>
         </div>
       </div>
       <div class="costo-body" id="${shariId}">
-        <div style="display:flex;gap:1rem;margin-bottom:.75rem;padding:.4rem 0;border-bottom:.5px solid var(--border2)">
-          <div style="display:flex;flex-direction:column;gap:.2rem;flex:1">
-            <span style="font-size:.7rem;color:var(--muted)">Rendimiento por batch</span>
-            <div style="display:flex;gap:.75rem;align-items:center">
-              <label style="font-size:.72rem;color:var(--dim)">Rolls</label>
-              <input type="number" min="1" value="${RECETA_SHARI.rendimiento}" style="${INP_STYLE};width:52px"
-                oninput="RECETA_SHARI.rendimiento=+this.value;guardarShari();recalcShariCard()">
-              <label style="font-size:.72rem;color:var(--dim)">Nigiris</label>
-              <input type="number" min="1" value="${RECETA_SHARI.rendimiento_n||RECETA_SHARI.rendimiento*8}" style="${INP_STYLE};width:52px"
-                oninput="RECETA_SHARI.rendimiento_n=+this.value;guardarShari();recalcShariCard()">
-            </div>
-          </div>
-        </div>`
+`
     RECETA_SHARI.ingredientes.forEach((ing,idx)=>{
       const c = costoIng(ing.k, ing.g)
       html += `<div class="costo-row ing-row" data-k="${ing.k}">
@@ -2423,9 +2412,14 @@ function renderCostos(){
         </div>
       </div>`
     })
+    const totalGramosS = RECETA_SHARI.ingredientes.reduce((a,ing)=>a+ing.g,0)
+    const cpg = batchCosto/totalGramosS
     html += `<div class="costo-total-row" id="shari-total-row">
-        <span class="costo-total-lbl">Costo batch · por roll / por nigiri</span>
-        <span class="costo-total-val" id="shari-total">${money(batchCosto)} → ${money(costoPorRoll)} / ${money(costoPorNig)}</span>
+        <div style="display:flex;flex-direction:column;gap:.1rem">
+          <span class="costo-total-lbl">Costo batch (${totalGramosS}g totales)</span>
+          <span style="font-family:var(--mono);font-size:.68rem;color:var(--muted)">${cpg.toFixed(2)} $/g · Roll 120g = ${money(Math.round(cpg*120))} · Nigiri 15g = ${money(Math.round(cpg*15))}</span>
+        </div>
+        <span class="costo-total-val" id="shari-total">${money(batchCosto)}</span>
       </div>
       </div>
     </div>`
@@ -2485,14 +2479,20 @@ function guardarShari(){
 
 function recalcShariCard(){
   const batchCosto = RECETA_SHARI.ingredientes.reduce((a,ing)=>a+costoIng(ing.k,ing.g),0)
-  const r = RECETA_SHARI.rendimiento||15
-  const n = RECETA_SHARI.rendimiento_n||(r*8)
+  const totalGramos = RECETA_SHARI.ingredientes.reduce((a,ing)=>a+ing.g,0)
+  const cpg = totalGramos>0 ? batchCosto/totalGramos : 0
   RECETA_SHARI.ingredientes.forEach((ing,idx)=>{
     const el = document.getElementById('shari-ing-cost-'+idx)
     if(el) el.textContent = money(costoIng(ing.k,ing.g))
   })
   const tot = document.getElementById('shari-total')
-  if(tot) tot.textContent = money(batchCosto)+' → '+money(batchCosto/r)+' / '+money(batchCosto/n)
+  if(tot) tot.textContent = money(batchCosto)
+  // Update header badges
+  const card = document.getElementById('card_shari')
+  if(card){
+    const badge = card.querySelector('.costo-badges span')
+    if(badge) badge.textContent = cpg.toFixed(2)+' $/g · Roll(120g) '+money(Math.round(cpg*120))+' · Nig(15g) '+money(Math.round(cpg*15))
+  }
 }
 
 // ── RENDER INSUMOS ────────────────────────────────────────────
