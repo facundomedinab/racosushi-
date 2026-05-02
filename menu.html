@@ -353,6 +353,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 <script>
 const WA_NUM='5493816174410'
 
+// ── VERSION DEL CÓDIGO ─────────────────────────────────────────────
+// Cambiá este número cada vez que modifiques el menú base en el código.
+// Eso hace que el localStorage viejo de cualquier dispositivo se descarte.
+const MENU_CODE_VERSION = '20260502'
+;(()=>{
+  const saved = localStorage.getItem('raco_menu_version')
+  if(saved !== MENU_CODE_VERSION){
+    // Limpiar solo las claves del menú, no las órdenes
+    ['raco_menu_data','raco_recetas_custom'].forEach(k=>localStorage.removeItem(k))
+    // Limpiar claves individuales de precio
+    Object.keys(localStorage).filter(k=>k.startsWith('raco_rec_')).forEach(k=>localStorage.removeItem(k))
+    localStorage.setItem('raco_menu_version', MENU_CODE_VERSION)
+  }
+})()
+
 // Precios base — se sobreescriben con localStorage si el admin los actualizó
 function getPV(tipo, nombre, base){
   const key = 'raco_rec_'+tipo+'_'+nombre.replace(/[^a-zA-Z0-9]/g,'_')+'_pv'

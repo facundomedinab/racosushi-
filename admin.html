@@ -3190,6 +3190,9 @@ function syncPreciosMenu(){
     nigiris: RECETAS_NIGIRIS.map(r=>({n:r.n, wa:r.n, p:r.p||'', desc:r.desc||'', spicy:r.spicy||0, v:getRec('nigiri',r.n,'pv',r.pv)}))
   }
   localStorage.setItem('raco_menu_data', JSON.stringify(menuData))
+  // Actualiza versión para que menu.html en otros dispositivos invalide su cache
+  const ts = new Date().toISOString().slice(0,10).replace(/-/g,'')
+  localStorage.setItem('raco_menu_version', ts)
   // Also individual price keys for backward compat
   RECETAS_ROLLS.forEach(r=>{
     localStorage.setItem('raco_rec_roll_'+r.n.replace(/[^a-zA-Z0-9]/g,'_')+'_pv', getRec('roll',r.n,'pv',r.pv))
