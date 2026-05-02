@@ -2556,8 +2556,10 @@ function updateInsumo(key, val){
   const v = parseFloat(val)
   if(isNaN(v)||v<0) return
   localStorage.setItem('raco_ins_'+key, v)
+  // Recalcular costos siempre que cambie un precio
+  renderCostos()
+  recalcShariCard()
   showToast('Precio actualizado ✓')
-  if(document.getElementById('tab-costos').classList.contains('on')) renderCostos()
 }
 
 
@@ -2675,8 +2677,11 @@ function importarInsumosCSV(input){
     })
 
     renderInsumos()
-    if(document.getElementById('tab-costos').classList.contains('on')) renderCostos()
-    showToast(`✓ ${count} insumos cargados desde CSV`)
+    // Siempre recalcular costos — los precios cambiaron
+    renderCostos()
+    // También recalcular shari
+    recalcShariCard()
+    showToast(`✓ ${count} insumos actualizados · costos recalculados`)
     input.value = ''
   }
   reader.readAsText(file)
