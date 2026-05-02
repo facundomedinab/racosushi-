@@ -2457,7 +2457,14 @@ function renderCostos(){
             <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted)">▾</span>
           </div>
         </div>
-        <div class="costo-body" id="${id}">`
+        <div class="costo-body" id="${id}">
+        <div style="display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-bottom:.5px solid var(--border2);margin-bottom:.4rem">
+          <span style="font-size:.72rem;color:var(--dim);white-space:nowrap">Key (usar en recetas como <span style="color:var(--accent2);font-family:var(--mono)">salsa_KEY</span>):</span>
+          <input type="text" value="${s.k}"
+            style="background:var(--surface2);border:.5px solid var(--accent2);border-radius:3px;padding:.25rem .5rem;color:var(--accent);font-family:var(--mono);font-size:.75rem;outline:none;flex:1;min-width:80px;max-width:180px"
+            oninput="updateSalsaKey('${s.k}', this.value)"
+            onblur="if(!this.value.trim())this.value='${s.k}'">
+        </div>`
       s.ingredientes.forEach((ing, idx) => {
         const g = ing.g || 0
         const k = ing.k || ing[0]
@@ -2491,6 +2498,23 @@ function renderCostos(){
 function toggleCostoBody(id){
   const el = document.getElementById(id)
   if(el) el.classList.toggle('open')
+}
+
+function updateSalsaKey(oldKey, newKey){
+  newKey = newKey.trim().toLowerCase().replace(/[^a-z0-9_]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'')
+  if(!newKey || newKey === oldKey) return
+  const salsa = RECETAS_SALSAS.find(s=>s.k===oldKey)
+  if(!salsa) return
+  salsa.k = newKey
+  // Persist
+  localStorage.setItem('raco_recetas_custom', JSON.stringify({
+    rolls:   RECETAS_ROLLS.map(r=>({n:r.n, pv:r.pv, p:r.p||'', desc:r.desc||'', spicy:r.spicy||0, ingredientes:r.ingredientes})),
+    nigiris: RECETAS_NIGIRIS.map(r=>({n:r.n, pv:r.pv, p:r.p||'', desc:r.desc||'', spicy:r.spicy||0, ingredientes:r.ingredientes})),
+    salsas:  RECETAS_SALSAS.map(s=>({n:s.n, k:s.k, batch:s.batch, usoRoll:s.usoRoll, usoNig:s.usoNig, ingredientes:s.ingredientes}))
+  }))
+  // Refresh panel
+  renderCostos()
+  showToast('Key actualizada: salsa_'+newKey)
 }
 
 function updateSalsaIng(salsaKey, idx, newG){
