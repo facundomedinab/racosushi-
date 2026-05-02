@@ -2431,6 +2431,12 @@ function renderCostos(){
 
   if(costosFiltro==='todos'||costosFiltro==='salsas'){
     html += `<div class="slabel" style="margin-top:1.25rem">Salsas</div>`
+    // Key reference panel
+    html += `<div style="background:var(--surface);border:.5px solid var(--border);border-radius:6px;padding:.65rem .85rem;margin-bottom:.75rem">
+      <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem">Keys para usar en recetas de rolls/nigiris</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.35rem">`+
+      RECETAS_SALSAS.map(s=>`<span style="font-family:var(--mono);font-size:.65rem;background:var(--surface2);border:.5px solid var(--border2);border-radius:3px;padding:.2rem .5rem;color:var(--accent2)" title="${s.n}">salsa_${s.k}</span>`).join('')+
+    `</div></div>`
     RECETAS_SALSAS.forEach(s => {
       const cBatch = s.ingredientes.reduce((a,ing)=>{
         const g = ing.g || 0
@@ -3112,7 +3118,9 @@ function importarRecetasCSV(input){
       else if(tipo==='salsa'){
         const existing = RECETAS_SALSAS.find(s=>s.n===nombre||s.k===csvSalsaKey)
         // Use key from CSV if provided, else from existing, else generate from name
-        const salsaK = csvSalsaKey || existing?.k || nombre.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_')
+        // Normalize key: remove salsa_ prefix so key is always bare (e.g. 'thai' not 'salsa_thai')
+        const rawK = csvSalsaKey || existing?.k || nombre.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_')
+        const salsaK = rawK.replace(/^salsa_/,'')
         newSalsas.push({
           n:nombre,
           k: salsaK,
