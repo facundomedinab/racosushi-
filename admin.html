@@ -1998,13 +1998,15 @@ function salsaCostoG(salsaKey){
     s.k === 'salsa_'+salsaKey ||
     s.n.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_') === salsaKey
   )
-  if(!salsa || !salsa.batch) return 0
+  if(!salsa) return 0
   const batchCosto = salsa.ingredientes.reduce((acc, ing) => {
     const k = ing.k || ing[0]
     const g = ing.g || ing[1] || 0
     return acc + (INSUMOS_BASE[k] ? getP(k) * g : 0)
   }, 0)
-  return batchCosto / salsa.batch  // $ por gramo
+  // Use real ingredient total grams, not s.batch (which may be wrong)
+  const totalGramos = salsa.ingredientes.reduce((acc, ing) => acc + (ing.g || ing[1] || 0), 0)
+  return totalGramos > 0 ? batchCosto / totalGramos : 0
 }
 
 // ── RECETAS (gramos por ingrediente) ─────────────────────────
@@ -2433,10 +2435,11 @@ function renderCostos(){
         const k = ing.k || ing[0]
         return a + (INSUMOS_BASE[k] ? getP(k)*g : 0)
       }, 0)
-      const cRoll = salsaCostoG(s.k) * s.usoRoll
-      const cNig  = salsaCostoG(s.k) * s.usoNig
+      const realBatchG = s.ingredientes.reduce((a,ing)=>a+(ing.g||0), 0)
+      const cRoll = realBatchG > 0 ? (cBatch/realBatchG) * s.usoRoll : 0
+      const cNig  = realBatchG > 0 ? (cBatch/realBatchG) * s.usoNig  : 0
       const id = 'cc_salsa_'+s.k
-      const cpgSalsa = salsaCostoG(s.k)
+      const cpgSalsa = realBatchG > 0 ? cBatch/realBatchG : 0
       html += `<div class="costo-card">
         <div class="costo-header" onclick="toggleCostoBody('${id}')">
           <span class="costo-nombre">${s.n}</span>
@@ -2460,10 +2463,10 @@ function renderCostos(){
           </div>
         </div>`
       })
-      const cpgT = s.batch > 0 ? cBatch/s.batch : 0
+      const cpgT = realBatchG > 0 ? cBatch/realBatchG : 0
       html += `<div class="costo-total-row">
           <div style="display:flex;flex-direction:column;gap:.1rem">
-            <span class="costo-total-lbl">Batch ${s.batch}g</span>
+            <span class="costo-total-lbl">Batch ${realBatchG}g</span>
             <span style="font-family:var(--mono);font-size:.68rem;color:var(--muted)">${cpgT.toFixed(2)} $/g · Roll(${s.usoRoll}g) = ${money(Math.round(cpgT*s.usoRoll))} · Nig(${s.usoNig}g) = ${money(Math.round(cpgT*s.usoNig))}</span>
           </div>
           <span class="costo-total-val">${money(cBatch)}</span>
