@@ -2436,11 +2436,13 @@ function renderCostos(){
       const cRoll = salsaCostoG(s.k) * s.usoRoll
       const cNig  = salsaCostoG(s.k) * s.usoNig
       const id = 'cc_salsa_'+s.k
+      const cpgSalsa = salsaCostoG(s.k)
       html += `<div class="costo-card">
         <div class="costo-header" onclick="toggleCostoBody('${id}')">
           <span class="costo-nombre">${s.n}</span>
           <div class="costo-badges">
-            <span style="font-family:var(--mono);font-size:.7rem;color:var(--dim)">Roll ${money(cRoll)} · Nig ${money(cNig)}</span>
+            <span style="font-family:var(--mono);font-size:.68rem;color:var(--muted)">${cpgSalsa.toFixed(2)} $/g</span>
+            <span style="font-family:var(--mono);font-size:.7rem;color:var(--dim)"> · Roll ${money(cRoll)} · Nig ${money(cNig)}</span>
             <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted)">▾</span>
           </div>
         </div>
@@ -2458,8 +2460,12 @@ function renderCostos(){
           </div>
         </div>`
       })
+      const cpgT = s.batch > 0 ? cBatch/s.batch : 0
       html += `<div class="costo-total-row">
-          <span class="costo-total-lbl">Batch ${s.batch}g → x roll(${s.usoRoll}g) / x nigiri(${s.usoNig}g)</span>
+          <div style="display:flex;flex-direction:column;gap:.1rem">
+            <span class="costo-total-lbl">Batch ${s.batch}g</span>
+            <span style="font-family:var(--mono);font-size:.68rem;color:var(--muted)">${cpgT.toFixed(2)} $/g · Roll(${s.usoRoll}g) = ${money(Math.round(cpgT*s.usoRoll))} · Nig(${s.usoNig}g) = ${money(Math.round(cpgT*s.usoNig))}</span>
+          </div>
           <span class="costo-total-val">${money(cBatch)}</span>
         </div></div></div>`
     })
